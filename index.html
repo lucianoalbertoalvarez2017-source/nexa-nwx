@@ -1,0 +1,2531 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Nexa NWX — Constructor de chatbots</title>
+<style>
+:root {
+  --bg: #0f1117;
+  --bg-side: #181b24;
+  --bg-card: #1d2030;
+  --bg-card-2: #252a3d;
+  --bg-soft: #2a2f44;
+  --bg-hover: #303652;
+  --text: #ffffff;
+  --text-s: #b0b6c8;
+  --text-m: #7a82a0;
+  --text-l: #5a6383;
+  --border: #2a2f44;
+  --border-s: #3a4060;
+  --accent: #7c3aed;
+  --accent-h: #6d28d9;
+  --accent-l: #2a1a4d;
+  --accent-2: #ec4899;
+  --success: #10b981;
+  --warn: #f59e0b;
+  --danger: #ef4444;
+  --info: #3b82f6;
+  --r: 8px;
+  --r-l: 14px;
+  --shadow: 0 4px 16px rgba(0,0,0,.4);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+body {
+  font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; cursor: pointer; }
+input, select, textarea { font: inherit; color: inherit; }
+a { color: inherit; text-decoration: none; }
+
+/* === App layout === */
+.app {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  height: 100vh;
+}
+
+/* === Sidebar === */
+aside.side {
+  background: var(--bg-side);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow-y: auto;
+}
+.brand {
+  display: flex; align-items: center; gap: 10px;
+  padding: 20px 16px;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -.3px;
+  border-bottom: 1px solid var(--border);
+}
+.brand .mark {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  box-shadow: 0 4px 12px rgba(124,58,237,.4);
+}
+.side-nav {
+  padding: 12px 8px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 12px;
+  border-radius: 6px;
+  color: var(--text-s);
+  font-size: 13.5px;
+  font-weight: 500;
+  margin-bottom: 1px;
+}
+.nav-item:hover { background: var(--bg-hover); color: var(--text); }
+.nav-item.active { background: var(--accent-l); color: var(--accent); font-weight: 600; }
+.nav-item .ico { width: 18px; height: 18px; display: flex; flex-shrink: 0; }
+.nav-item .count {
+  margin-left: auto;
+  background: var(--bg-soft);
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.side-section {
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--text-l);
+  padding: 16px 16px 6px;
+}
+.side-foot {
+  margin-top: auto;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-m);
+}
+
+/* === Main === */
+main {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+.page-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 28px;
+  border-bottom: 1px solid var(--border);
+  gap: 16px;
+}
+.page-head h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.3px; }
+.page-head .sub { color: var(--text-m); font-size: 13px; margin-top: 2px; }
+.page-head .actions { display: flex; gap: 8px; align-items: center; }
+
+.scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px;
+}
+
+/* === Buttons === */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: var(--r);
+  border: 1px solid transparent;
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+  font-size: 13px;
+  transition: background .12s, transform .05s;
+}
+.btn:hover { background: var(--accent-h); }
+.btn:active { transform: translateY(1px); }
+.btn.ghost { background: var(--bg-card); color: var(--text); border-color: var(--border-s); }
+.btn.ghost:hover { background: var(--bg-soft); }
+.btn.danger { background: var(--danger); }
+.btn.success { background: var(--success); }
+.btn.sm { height: 28px; padding: 0 10px; font-size: 12px; }
+.btn.lg { height: 42px; padding: 0 18px; font-size: 14px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* === Cards === */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-l);
+  margin-bottom: 16px;
+}
+.card-head {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-head h3 { margin: 0; font-size: 14px; font-weight: 600; }
+.card-body { padding: 18px; }
+.card-body.flush { padding: 0; }
+
+/* === Bot list === */
+.bot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.bot-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-l);
+  padding: 20px;
+  cursor: pointer;
+  transition: transform .15s, border-color .15s, box-shadow .15s;
+  position: relative;
+}
+.bot-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 12px 32px -8px rgba(124,58,237,.3);
+}
+.bot-card .icon {
+  width: 56px; height: 56px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+  margin-bottom: 14px;
+}
+.bot-card h3 { margin: 0 0 4px; font-size: 16px; }
+.bot-card .meta { color: var(--text-m); font-size: 12px; margin-bottom: 12px; }
+.bot-card .stats {
+  display: flex; gap: 16px;
+  font-size: 12px;
+  color: var(--text-s);
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.bot-card .stats b { color: var(--text); }
+.bot-card .status-tag {
+  position: absolute;
+  top: 16px; right: 16px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+}
+.bot-card .status-tag.active { background: rgba(16,185,129,.15); color: var(--success); }
+.bot-card .status-tag.draft { background: var(--bg-soft); color: var(--text-m); }
+
+/* === Editor layout === */
+.editor {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  flex: 1;
+  overflow: hidden;
+}
+.editor-canvas {
+  overflow-y: auto;
+  padding: 28px 32px 80px;
+  background:
+    radial-gradient(circle, rgba(124,58,237,.06) 1px, transparent 1px) 0 0/24px 24px,
+    var(--bg);
+}
+.editor-side {
+  background: var(--bg-side);
+  border-left: 1px solid var(--border);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+}
+
+/* === Flow nodes === */
+.flow-start, .flow-end-node {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-weight: 600; font-size: 13px;
+  margin: 0 auto;
+}
+.flow-start { background: var(--accent); color: white; }
+.flow-end-node { background: var(--success); color: white; }
+.flow-arrow {
+  display: flex; justify-content: center;
+  color: var(--border-s);
+  font-size: 20px;
+  margin: 4px 0;
+}
+.flow-container {
+  max-width: 640px; margin: 0 auto;
+  display: flex; flex-direction: column;
+}
+
+.node {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-l);
+  overflow: hidden;
+  transition: border-color .15s, box-shadow .15s;
+  position: relative;
+}
+.node:hover { border-color: var(--accent); box-shadow: 0 8px 24px -8px rgba(124,58,237,.3); }
+.node.selected { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-l); }
+.node-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg-card-2);
+  border-bottom: 1px solid var(--border);
+}
+.node-head .type-icon {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  color: white;
+}
+.node-head .type-label {
+  font-weight: 600; font-size: 12px;
+  text-transform: uppercase; letter-spacing: .4px;
+  color: var(--text-s);
+}
+.node-head .id {
+  margin-left: auto;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--text-l);
+}
+.node-head .del-btn {
+  background: none; border: none;
+  width: 24px; height: 24px;
+  border-radius: 4px;
+  color: var(--text-l);
+}
+.node-head .del-btn:hover { background: var(--danger); color: white; }
+
+.node-body { padding: 14px 16px; }
+.node-body .content-preview {
+  color: var(--text);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  line-height: 1.5;
+}
+.node-body .placeholder {
+  color: var(--text-l);
+  font-style: italic;
+}
+.node-body .branches {
+  display: flex; flex-direction: column; gap: 6px;
+  margin-top: 10px;
+}
+.node-body .branch {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-soft);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.node-body .branch .label { flex: 1; }
+.node-body .branch .target {
+  color: var(--text-m);
+  font-size: 12px;
+}
+.node-body .variable {
+  display: inline-block;
+  background: var(--accent-l);
+  color: var(--accent);
+  padding: 1px 8px;
+  border-radius: 4px;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  margin-top: 6px;
+}
+
+/* Node type colors */
+.tcolor-message { background: var(--info); }
+.tcolor-question { background: #8b5cf6; }
+.tcolor-buttons { background: var(--accent); }
+.tcolor-condition { background: var(--warn); }
+.tcolor-action { background: #ec4899; }
+.tcolor-delay { background: #06b6d4; }
+.tcolor-end { background: var(--success); }
+
+.add-step-btn {
+  background: var(--bg-card);
+  border: 2px dashed var(--border-s);
+  color: var(--text-m);
+  border-radius: var(--r-l);
+  padding: 14px;
+  font-size: 13px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all .15s;
+  margin-top: 4px;
+}
+.add-step-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--bg-card-2); }
+
+/* === Editor side: preview/inspector === */
+.side-tabs {
+  display: flex;
+  background: var(--bg-side);
+  border-bottom: 1px solid var(--border);
+}
+.side-tab {
+  flex: 1;
+  background: none; border: none;
+  padding: 12px;
+  font-size: 13px; font-weight: 600;
+  color: var(--text-m);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.side-tab:hover { color: var(--text); }
+.side-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.side-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+/* === Chat preview === */
+.chat-preview {
+  display: flex; flex-direction: column;
+  height: 100%;
+}
+.chat-header {
+  background: var(--bg-card);
+  border-radius: 12px 12px 0 0;
+  padding: 12px 14px;
+  display: flex; align-items: center; gap: 10px;
+  border: 1px solid var(--border);
+  border-bottom: none;
+}
+.chat-header .avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.chat-header .info b { font-size: 14px; }
+.chat-header .info .stat { font-size: 11px; color: var(--success); display: flex; align-items: center; gap: 4px; }
+.chat-header .info .stat::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--success); }
+.chat-body {
+  flex: 1;
+  background: #0a0d18;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  padding: 14px;
+  overflow-y: auto;
+  display: flex; flex-direction: column; gap: 8px;
+  min-height: 320px;
+  max-height: 50vh;
+}
+.chat-input {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+  padding: 10px 12px;
+  display: flex; gap: 8px;
+  align-items: center;
+}
+.chat-input input {
+  flex: 1; height: 36px;
+  background: var(--bg-soft); color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 0 14px;
+  outline: none;
+}
+.chat-input input:focus { border-color: var(--accent); }
+.chat-input button.send {
+  background: var(--accent); color: white;
+  border: none;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.msg {
+  max-width: 80%;
+  padding: 9px 13px;
+  border-radius: 14px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+.msg.bot {
+  align-self: flex-start;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-bottom-left-radius: 4px;
+}
+.msg.user {
+  align-self: flex-end;
+  background: var(--accent);
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+.msg.system {
+  align-self: center;
+  background: transparent;
+  color: var(--text-m);
+  font-size: 11px;
+  font-style: italic;
+}
+.msg-buttons {
+  align-self: flex-start;
+  display: flex; flex-direction: column; gap: 6px;
+  margin-top: 4px;
+}
+.msg-btn {
+  background: var(--bg-card);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 16px;
+  padding: 6px 14px;
+  font-size: 13px; font-weight: 600;
+  text-align: left;
+}
+.msg-btn:hover { background: var(--accent-l); }
+.msg-btn:disabled { opacity: .5; cursor: not-allowed; }
+.msg.bot .typing {
+  display: inline-flex; gap: 3px;
+  align-items: center;
+}
+.msg.bot .typing span {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--text-m);
+  animation: blink 1.2s infinite;
+}
+.msg.bot .typing span:nth-child(2) { animation-delay: .2s; }
+.msg.bot .typing span:nth-child(3) { animation-delay: .4s; }
+@keyframes blink { 0%, 60%, 100% { opacity: .3; } 30% { opacity: 1; } }
+
+/* === Form fields === */
+.field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+.field label { font-size: 12px; font-weight: 600; color: var(--text-s); }
+.field input, .field select, .field textarea {
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--border-s);
+  border-radius: var(--r);
+  outline: none;
+  background: var(--bg-card);
+  color: var(--text);
+  transition: border-color .12s, box-shadow .12s;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-l);
+}
+.field textarea { height: auto; min-height: 80px; padding: 10px 12px; resize: vertical; }
+.field .hint { font-size: 11px; color: var(--text-m); }
+
+.option-row {
+  display: flex; gap: 6px; margin-bottom: 6px;
+}
+.option-row input { flex: 1; }
+.option-row select { width: 130px; flex-shrink: 0; }
+.option-row .rm { background: none; border: none; color: var(--text-l); width: 32px; }
+.option-row .rm:hover { color: var(--danger); }
+
+/* === Modal === */
+.modal {
+  position: fixed; inset: 0;
+  background: rgba(15,17,23,.85);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  display: none;
+  align-items: center; justify-content: center;
+  padding: 24px;
+}
+.modal.open { display: flex; }
+.modal-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-s);
+  border-radius: var(--r-l);
+  max-width: 520px; width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal-head {
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-head h2 { margin: 0; font-size: 16px; }
+.modal-body { padding: 18px 20px; }
+.modal-foot {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  display: flex; justify-content: flex-end; gap: 8px;
+}
+
+/* === Toast === */
+#toast {
+  position: fixed; bottom: 20px; right: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-s);
+  color: var(--text);
+  padding: 12px 18px;
+  border-radius: var(--r);
+  font-weight: 500; font-size: 13px;
+  opacity: 0; transform: translateY(8px);
+  transition: opacity .25s, transform .25s;
+  pointer-events: none;
+  z-index: 500;
+  box-shadow: var(--shadow);
+}
+#toast.show { opacity: 1; transform: translateY(0); }
+
+/* === Empty === */
+.empty {
+  text-align: center; padding: 80px 24px;
+  color: var(--text-m);
+}
+.empty .emoji { font-size: 56px; margin-bottom: 16px; opacity: .8; }
+.empty h2 { margin: 0 0 8px; color: var(--text); font-weight: 700; font-size: 20px; }
+
+/* === Templates === */
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+.template-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-l);
+  padding: 18px;
+  cursor: pointer;
+  transition: transform .15s, border-color .15s;
+}
+.template-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+}
+.template-card .ico {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+.template-card h4 { margin: 0 0 6px; font-size: 14px; }
+.template-card p { margin: 0; font-size: 12px; color: var(--text-m); line-height: 1.5; }
+.template-card .steps {
+  font-size: 11px;
+  color: var(--text-l);
+  margin-top: 10px;
+}
+
+/* === KPIs === */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.kpi {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-l);
+  padding: 18px;
+}
+.kpi .label { font-size: 11px; color: var(--text-m); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+.kpi .value { font-size: 26px; font-weight: 700; margin: 6px 0 2px; letter-spacing: -.5px; }
+.kpi .trend { font-size: 12px; color: var(--success); }
+
+/* === Toggle === */
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 40px; height: 22px;
+}
+.toggle input { display: none; }
+.toggle .slider {
+  position: absolute; inset: 0;
+  background: var(--bg-soft);
+  border-radius: 22px;
+  transition: background .15s;
+}
+.toggle .slider::before {
+  content: '';
+  position: absolute;
+  width: 16px; height: 16px;
+  left: 3px; top: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: transform .15s;
+}
+.toggle input:checked + .slider { background: var(--accent); }
+.toggle input:checked + .slider::before { transform: translateX(18px); }
+
+table.data {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+table.data th {
+  text-align: left;
+  padding: 10px 14px;
+  background: var(--bg-card-2);
+  font-size: 11px; font-weight: 700;
+  color: var(--text-m);
+  text-transform: uppercase; letter-spacing: .4px;
+  border-bottom: 1px solid var(--border);
+}
+table.data td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+table.data tr:last-child td { border-bottom: none; }
+table.data tr.clickable { cursor: pointer; }
+table.data tr.clickable:hover { background: var(--bg-card-2); }
+
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; }
+  aside.side { display: none; }
+  .editor { grid-template-columns: 1fr; }
+  .editor-side { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<div class="modal" id="modal"><div class="modal-card" id="modalCard"></div></div>
+<div id="toast"></div>
+
+<script>
+(() => {
+'use strict';
+
+// ============================================================
+// UTILS
+// ============================================================
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const uid = () => Math.random().toString(36).slice(2, 8);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtDate = ts => new Intl.DateTimeFormat('es-MX', { dateStyle:'medium', timeStyle:'short' }).format(new Date(ts));
+const fmtDay = ts => new Intl.DateTimeFormat('es-MX', { day:'numeric', month:'short' }).format(new Date(ts));
+
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._tm);
+  t._tm = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ============================================================
+// DATA
+// ============================================================
+const STORAGE_KEY = 'nexa.v1';
+
+const STEP_TYPES = {
+  message:   { label:'Mensaje',    icon:'💬', color:'var(--info)',    desc:'Envía un texto al usuario' },
+  question:  { label:'Pregunta',   icon:'❓', color:'#8b5cf6',         desc:'Captura una respuesta y guarda en variable' },
+  buttons:   { label:'Botones',    icon:'🔘', color:'var(--accent)',   desc:'Muestra opciones con ramificaciones' },
+  ai:        { label:'IA',         icon:'✨', color:'#f59e0b',         desc:'Respuesta generada con IA (Claude / OpenAI)' },
+  condition: { label:'Condición',  icon:'⚖️', color:'var(--warn)',     desc:'Bifurca según una variable' },
+  action:    { label:'Acción',     icon:'⚡', color:'#ec4899',         desc:'Envía email, webhook o tag' },
+  delay:     { label:'Espera',     icon:'⏱️', color:'#06b6d4',         desc:'Pausa antes del siguiente paso' },
+  end:       { label:'Final',      icon:'🏁', color:'var(--success)',  desc:'Termina la conversación' },
+};
+
+const CHANNELS = {
+  web:       { label:'Widget web',  icon:'🌐', color:'#3b82f6' },
+  whatsapp:  { label:'WhatsApp',    icon:'💬', color:'#25d366' },
+  telegram:  { label:'Telegram',    icon:'✈️', color:'#0088cc' },
+  messenger: { label:'Messenger',   icon:'💙', color:'#0084ff' },
+  instagram: { label:'Instagram',   icon:'📷', color:'#e1306c' },
+};
+
+function templates() {
+  return [
+    {
+      id: 'tpl-welcome',
+      name: 'Bienvenida + FAQ',
+      emoji: '👋',
+      color: '#3b82f6',
+      desc: 'Saluda al visitante, captura su nombre y muestra preguntas frecuentes.',
+      welcomeMsg: '¿Sobre qué quieres saber?',
+      flow: [
+        { id:'s1', type:'message', content:'¡Hola! 👋 Bienvenido a {{negocio}}. Estoy aquí para ayudarte.', next:'s2' },
+        { id:'s2', type:'question', content:'¿Cómo te llamas?', variable:'nombre', next:'s3' },
+        { id:'s3', type:'message', content:'Mucho gusto, {{nombre}}. ✨', next:'s4' },
+        { id:'s4', type:'buttons', content:'¿En qué puedo ayudarte hoy?', options:[
+          { label:'Conocer productos', next:'s5' },
+          { label:'Horarios y ubicación', next:'s6' },
+          { label:'Hablar con humano', next:'s7' },
+        ]},
+        { id:'s5', type:'message', content:'Tenemos cursos, plantillas y consultoría. ¿Quieres ver el catálogo completo?', next:'end' },
+        { id:'s6', type:'message', content:'📍 Av. Reforma 123, CDMX\n🕒 Lun-Vie 9am-7pm, Sáb 10am-2pm', next:'end' },
+        { id:'s7', type:'action', actionType:'notify', content:'Notificar al equipo que {{nombre}} quiere hablar', next:'s8' },
+        { id:'s8', type:'message', content:'Un asesor te contactará en menos de 1 hora. Mientras tanto, ¿algo más en lo que pueda ayudarte?', next:'end' },
+        { id:'end', type:'end', content:'¡Gracias por contactarnos!' },
+      ],
+    },
+    {
+      id: 'tpl-leads',
+      name: 'Captura de leads',
+      emoji: '🎯',
+      color: '#ec4899',
+      desc: 'Captura nombre, email y necesidad de un prospecto interesado.',
+      welcomeMsg: '¿Buscas servicios? Te ayudo en 30 segundos.',
+      flow: [
+        { id:'s1', type:'message', content:'¡Hola! 🎉 Te ayudo a encontrar lo que necesitas.', next:'s2' },
+        { id:'s2', type:'question', content:'¿Cómo te llamas?', variable:'nombre', next:'s3' },
+        { id:'s3', type:'question', content:'¿A qué correo te contacto, {{nombre}}?', variable:'email', validate:'email', next:'s4' },
+        { id:'s4', type:'buttons', content:'¿Qué te interesa más?', variable:'interes', options:[
+          { label:'Diseño de marca',   next:'s5' },
+          { label:'Sitio web',          next:'s5' },
+          { label:'Estrategia digital', next:'s5' },
+        ]},
+        { id:'s5', type:'question', content:'¿Tienes un presupuesto en mente?', variable:'presupuesto', next:'s6' },
+        { id:'s6', type:'action', actionType:'email', content:'Enviar lead a ventas: {{nombre}} ({{email}}) interesado en {{interes}}', next:'s7' },
+        { id:'s7', type:'message', content:'¡Perfecto, {{nombre}}! 🚀 Recibimos tu información. Un asesor te contactará en el día.', next:'end' },
+        { id:'end', type:'end', content:'¡Que tengas un excelente día!' },
+      ],
+    },
+    {
+      id: 'tpl-order',
+      name: 'Tomar pedido',
+      emoji: '🛒',
+      color: '#10b981',
+      desc: 'Flujo simple para recibir pedidos por chat (restaurante, tienda, etc).',
+      welcomeMsg: '¿Listo para ordenar?',
+      flow: [
+        { id:'s1', type:'message', content:'¡Hola! 🍕 Bienvenido a la tienda.', next:'s2' },
+        { id:'s2', type:'buttons', content:'¿Qué te antoja hoy?', variable:'producto', options:[
+          { label:'🍕 Pizza ($249)',      next:'s3' },
+          { label:'🍔 Hamburguesa ($149)', next:'s3' },
+          { label:'🥗 Ensalada ($129)',   next:'s3' },
+        ]},
+        { id:'s3', type:'question', content:'¿Cuántas te llevas?', variable:'cantidad', next:'s4' },
+        { id:'s4', type:'question', content:'¿A qué dirección lo enviamos?', variable:'direccion', next:'s5' },
+        { id:'s5', type:'question', content:'¿Tu teléfono para confirmar?', variable:'telefono', next:'s6' },
+        { id:'s6', type:'message', content:'Resumen de tu pedido:\n• Producto: {{producto}}\n• Cantidad: {{cantidad}}\n• Dirección: {{direccion}}\n• Teléfono: {{telefono}}\n\nLlega en 30 min. ¡Gracias!', next:'end' },
+        { id:'end', type:'end' },
+      ],
+    },
+    {
+      id: 'tpl-support',
+      name: 'Soporte al cliente',
+      emoji: '🆘',
+      color: '#f59e0b',
+      desc: 'Auto-clasifica un problema y deriva al equipo correcto.',
+      welcomeMsg: '¿En qué te ayudo?',
+      flow: [
+        { id:'s1', type:'message', content:'Hola, soy el asistente de soporte. 🤖', next:'s2' },
+        { id:'s2', type:'buttons', content:'¿Cuál es tu problema?', variable:'tipo', options:[
+          { label:'No puedo iniciar sesión', next:'s3' },
+          { label:'Mi pedido no llegó',       next:'s4' },
+          { label:'Problema con el pago',     next:'s5' },
+          { label:'Otra cosa',                 next:'s6' },
+        ]},
+        { id:'s3', type:'message', content:'Prueba resetear tu contraseña en: tu-sitio.com/reset\n¿Funcionó?', next:'end' },
+        { id:'s4', type:'question', content:'Pásame tu número de pedido (ej. ORD-12345)', variable:'pedido', next:'s7' },
+        { id:'s5', type:'question', content:'¿Cuál fue el último dígito de la tarjeta usada?', variable:'tarjeta', next:'s7' },
+        { id:'s6', type:'question', content:'Cuéntame con detalle:', variable:'detalle', next:'s7' },
+        { id:'s7', type:'action', actionType:'ticket', content:'Crear ticket: {{tipo}}', next:'s8' },
+        { id:'s8', type:'message', content:'Listo, abrí un ticket. Te contactaremos por correo en menos de 24 horas. 🙏', next:'end' },
+        { id:'end', type:'end' },
+      ],
+    },
+    {
+      id: 'tpl-cita',
+      name: 'Agendar cita',
+      emoji: '📅',
+      color: '#06b6d4',
+      desc: 'Permite agendar una cita o consulta paso a paso.',
+      welcomeMsg: '¿Quieres agendar una cita?',
+      flow: [
+        { id:'s1', type:'message', content:'Te ayudo a agendar tu cita en menos de 1 minuto. 📅', next:'s2' },
+        { id:'s2', type:'question', content:'¿Cuál es tu nombre completo?', variable:'nombre', next:'s3' },
+        { id:'s3', type:'buttons', content:'¿Qué día prefieres?', variable:'dia', options:[
+          { label:'Hoy',     next:'s4' },
+          { label:'Mañana',  next:'s4' },
+          { label:'Esta semana', next:'s4' },
+        ]},
+        { id:'s4', type:'buttons', content:'¿En qué horario?', variable:'horario', options:[
+          { label:'Mañana (9am-12pm)',  next:'s5' },
+          { label:'Tarde (12pm-5pm)',    next:'s5' },
+          { label:'Noche (5pm-8pm)',     next:'s5' },
+        ]},
+        { id:'s5', type:'question', content:'¿Cuál es el motivo de la cita?', variable:'motivo', next:'s6' },
+        { id:'s6', type:'message', content:'Cita registrada:\n📅 {{dia}} en horario {{horario}}\n📝 {{motivo}}\n\nTe enviaremos confirmación a tu correo en breve.', next:'end' },
+        { id:'end', type:'end' },
+      ],
+    },
+    {
+      id: 'tpl-blank',
+      name: 'Empezar de cero',
+      emoji: '✨',
+      color: '#7c3aed',
+      desc: 'Crea tu propio flujo desde un lienzo en blanco.',
+      welcomeMsg: '¡Hola! ¿En qué te puedo ayudar?',
+      flow: [
+        { id:'s1', type:'message', content:'¡Hola! Este es tu primer mensaje.', next:'end' },
+        { id:'end', type:'end' },
+      ],
+    },
+  ];
+}
+
+function seedDB() {
+  const tpls = templates();
+  // Pre-cook a "Bienvenida" bot as live demo
+  const wel = tpls.find(t => t.id === 'tpl-welcome');
+  return {
+    bots: [{
+      id: uid(),
+      name: 'Asistente de la tienda',
+      emoji: wel.emoji,
+      color: wel.color,
+      welcomeMsg: wel.welcomeMsg,
+      flow: JSON.parse(JSON.stringify(wel.flow)),
+      channel: 'web',
+      active: true,
+      createdAt: Date.now() - 86400000 * 3,
+      conversations: 142,
+      completed: 89,
+    }],
+    conversations: seedConversations(),
+    settings: {
+      businessName: 'Mi negocio',
+    },
+    integrations: {
+      ai: {
+        provider: 'anthropic',  // 'anthropic' | 'openai' | 'demo'
+        model: 'claude-sonnet-4-6',
+        hasKey: false,
+        systemPrompt: 'Eres un asistente amable. Responde breve y en español.',
+      },
+      whatsapp: {
+        connected: false,
+        phoneNumber: '',
+        phoneNumberId: '',
+        verifyToken: '',
+        hasToken: false,
+      },
+      telegram: { connected: false, hasToken: false, botName: '' },
+      messenger: { connected: false, pageId: '', pageName: '', hasToken: false },
+      instagram: { connected: false, accountId: '', username: '', hasToken: false },
+    },
+  };
+}
+
+function seedConversations() {
+  const out = [];
+  const names = ['Visitante anónimo','Ana M.','Carlos R.','Visitante anónimo','Luis G.','Sofía P.','Visitante anónimo'];
+  for (let i = 0; i < 6; i++) {
+    out.push({
+      id: uid(),
+      botId: null, // will be filled at load if matches
+      userName: names[i],
+      startedAt: Date.now() - i * 3600000 - Math.random() * 3600000,
+      completed: Math.random() > 0.3,
+      messages: Math.floor(Math.random() * 8) + 3,
+      variables: { nombre: names[i] !== 'Visitante anónimo' ? names[i] : '' },
+    });
+  }
+  return out;
+}
+
+// === Configuración del backend ===
+// Si subes el frontend a Hostinger y el backend a Render, pega aquí la URL de Render
+// Ej: 'https://nexa-nwx.onrender.com'
+// Si lo dejas vacío usa el mismo origen (cuando corres node server.js localmente)
+const REMOTE_API_URL = localStorage.getItem('nexa.apiUrl') || '';
+const useAPI = !!REMOTE_API_URL || location.protocol === 'http:' || location.protocol === 'https:';
+const apiBase = REMOTE_API_URL || '';
+function api(path) { return apiBase + path; }
+
+function mergeDefaults(data) {
+  const def = seedDB();
+  const merged = { ...def, ...data };
+  merged.integrations = { ...def.integrations, ...(data?.integrations || {}) };
+  if (data?.integrations?.ai) merged.integrations.ai = { ...def.integrations.ai, ...data.integrations.ai };
+  if (data?.integrations?.whatsapp) merged.integrations.whatsapp = { ...def.integrations.whatsapp, ...data.integrations.whatsapp };
+  if (data?.integrations?.telegram) merged.integrations.telegram = { ...def.integrations.telegram, ...data.integrations.telegram };
+  if (!Array.isArray(merged.bots)) merged.bots = [];
+  if (!Array.isArray(merged.conversations)) merged.conversations = [];
+  return merged;
+}
+
+let db;
+async function loadDB() {
+  if (useAPI) {
+    try {
+      const r = await fetch(api('/api/state'));
+      if (r.ok) {
+        const data = await r.json();
+        const merged = mergeDefaults(data);
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(merged)); } catch(e) {}
+        return merged;
+      }
+    } catch(e) { console.warn('API unreachable, using localStorage', e); }
+  }
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (Array.isArray(data?.bots)) return mergeDefaults(data);
+    }
+  } catch(e) {}
+  return seedDB();
+}
+let _saveT = null;
+function saveDB() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); } catch(e) {}
+  if (useAPI) {
+    clearTimeout(_saveT);
+    _saveT = setTimeout(() => {
+      fetch(api('/api/state'), { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(db) }).catch(()=>{});
+    }, 200);
+  }
+}
+
+async function aiChat(messages, systemPrompt) {
+  if (!useAPI) {
+    return { reply: '(Modo demo: levanta el servidor con start.bat para usar IA real)', demo: true };
+  }
+  try {
+    const r = await fetch(api('/api/ai/chat'), {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ messages, systemPrompt }),
+    });
+    return await r.json();
+  } catch(e) {
+    return { reply: '(Error contactando la IA)', error: true };
+  }
+}
+
+db = seedDB(); // placeholder, real load happens at init
+
+function botById(id) { return db.bots.find(b => b.id === id); }
+function stepInBot(bot, stepId) { return bot.flow.find(s => s.id === stepId); }
+
+// ============================================================
+// ICONS
+// ============================================================
+const I = {
+  bot: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>`,
+  tpl: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="7" x="3" y="3" rx="1"/><rect width="9" height="7" x="3" y="14" rx="1"/><rect width="5" height="7" x="16" y="14" rx="1"/></svg>`,
+  chat: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>`,
+  chart: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>`,
+  set: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
+  plus: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>`,
+  back: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>`,
+  play: `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>`,
+  refresh: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>`,
+  send: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4 20-7Z"/></svg>`,
+  copy: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`,
+  trash: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>`,
+};
+
+// ============================================================
+// ROUTER
+// ============================================================
+const routes = [];
+function route(p, h) {
+  const keys = [];
+  const re = new RegExp('^' + p.replace(/:[^/]+/g, m => { keys.push(m.slice(1)); return '([^/]+)'; }) + '$');
+  routes.push({ keys, re, h });
+}
+let cur;
+function parseHash() {
+  const h = location.hash.slice(1) || '/';
+  const [path, qs] = h.split('?');
+  const q = {};
+  if (qs) qs.split('&').forEach(p => { const [k,v] = p.split('='); q[k] = decodeURIComponent(v||''); });
+  for (const r of routes) {
+    const m = path.match(r.re);
+    if (m) {
+      const params = {};
+      r.keys.forEach((k, i) => params[k] = decodeURIComponent(m[i+1]));
+      return { path, params, query: q, h: r.h };
+    }
+  }
+  return { path, params:{}, query:{}, h: () => `<div class="empty"><div class="emoji">🔍</div><h2>Página no encontrada</h2><a class="btn" href="#/">Volver</a></div>` };
+}
+function navigate(p) { location.hash = '#' + p; }
+
+// ============================================================
+// SHELL
+// ============================================================
+function shell(content, active) {
+  return `
+    <aside class="side">
+      <div class="brand">
+        <span class="mark">N</span>
+        <span>Nexa <span style="font-size:10px;font-weight:700;color:var(--text-l);background:var(--bg-soft);padding:2px 6px;border-radius:4px;letter-spacing:.5px;vertical-align:middle">NWX</span></span>
+      </div>
+      <div class="side-nav">
+        <a class="nav-item ${active==='bots'?'active':''}" href="#/"><span class="ico">${I.bot}</span> Mis bots <span class="count">${db.bots.length}</span></a>
+        <a class="nav-item ${active==='templates'?'active':''}" href="#/plantillas"><span class="ico">${I.tpl}</span> Plantillas</a>
+        <a class="nav-item ${active==='conversations'?'active':''}" href="#/conversaciones"><span class="ico">${I.chat}</span> Conversaciones</a>
+        <a class="nav-item ${active==='analytics'?'active':''}" href="#/analytics"><span class="ico">${I.chart}</span> Analytics</a>
+        <a class="nav-item ${active==='integrations'?'active':''}" href="#/integraciones"><span class="ico">🔌</span> Integraciones ${(db.integrations?.ai?.hasKey || db.integrations?.whatsapp?.hasToken)?`<span class="count" style="background:var(--success);color:white">●</span>`:''}</a>
+        <div class="side-section">Cuenta</div>
+        <a class="nav-item ${active==='settings'?'active':''}" href="#/configuracion"><span class="ico">${I.set}</span> Configuración</a>
+      </div>
+      <div class="side-foot">
+        <b style="color:var(--text)">${esc(db.settings.businessName)}</b><br>
+        ${db.bots.filter(b => b.active).length} bot activo
+      </div>
+    </aside>
+    <main>${content}</main>`;
+}
+
+// ============================================================
+// VIEWS
+// ============================================================
+function viewBots() {
+  const totalConvs = db.bots.reduce((s,b) => s + (b.conversations||0), 0);
+  const totalCompleted = db.bots.reduce((s,b) => s + (b.completed||0), 0);
+  return shell(`
+    <div class="page-head">
+      <div>
+        <h1>Mis bots</h1>
+        <div class="sub">Crea, edita y monitorea tus chatbots</div>
+      </div>
+      <div class="actions">
+        <a class="btn ghost" href="#/plantillas">${I.tpl} Desde plantilla</a>
+        <button type="button" class="btn" data-act="new-bot">${I.plus} Nuevo bot</button>
+      </div>
+    </div>
+    <div class="scroll-area">
+      <div class="kpi-grid">
+        <div class="kpi"><div class="label">Bots totales</div><div class="value">${db.bots.length}</div><div class="trend">${db.bots.filter(b=>b.active).length} activos</div></div>
+        <div class="kpi"><div class="label">Conversaciones</div><div class="value">${totalConvs.toLocaleString('es')}</div><div class="trend">últimos 30 días</div></div>
+        <div class="kpi"><div class="label">Tasa de finalización</div><div class="value">${totalConvs?Math.round(totalCompleted/totalConvs*100):0}%</div><div class="trend">${totalCompleted} completadas</div></div>
+        <div class="kpi"><div class="label">Tiempo ahorrado</div><div class="value">${Math.round(totalConvs*2.5)}h</div><div class="trend">~2.5 min por conversación</div></div>
+      </div>
+      ${db.bots.length === 0 ? `
+        <div class="empty">
+          <div class="emoji">🤖</div>
+          <h2>Aún no tienes bots</h2>
+          <p>Crea tu primer chatbot desde una plantilla o desde cero</p>
+          <a class="btn lg" href="#/plantillas" style="margin-top:16px">${I.tpl} Ver plantillas</a>
+        </div>
+      ` : `
+        <div class="bot-grid">
+          ${db.bots.map(b => `
+            <div class="bot-card" data-link="#/bot/${b.id}">
+              <span class="status-tag ${b.active?'active':'draft'}">${b.active?'Activo':'Borrador'}</span>
+              <div class="icon" style="background:${b.color}">${b.emoji}</div>
+              <h3>${esc(b.name)}</h3>
+              <div class="meta">${b.flow.length} pasos · ${b.channel === 'web' ? 'Web widget' : 'WhatsApp'}</div>
+              <div class="stats">
+                <div><b>${b.conversations||0}</b><br><span style="color:var(--text-l);font-size:11px">conversaciones</span></div>
+                <div><b>${b.completed||0}</b><br><span style="color:var(--text-l);font-size:11px">completadas</span></div>
+              </div>
+            </div>`).join('')}
+        </div>
+      `}
+    </div>
+  `, 'bots');
+}
+
+function viewTemplates() {
+  return shell(`
+    <div class="page-head">
+      <div>
+        <h1>Plantillas</h1>
+        <div class="sub">Empieza con un flujo pre-armado y personalízalo</div>
+      </div>
+      <div class="actions">
+        <a class="btn ghost" href="#/">${I.back} Volver</a>
+      </div>
+    </div>
+    <div class="scroll-area">
+      <div class="template-grid">
+        ${templates().map(t => `
+          <div class="template-card" data-template="${t.id}">
+            <div class="ico" style="color:${t.color}">${t.emoji}</div>
+            <h4>${esc(t.name)}</h4>
+            <p>${esc(t.desc)}</p>
+            <div class="steps">${t.flow.length} pasos · listo para usar</div>
+          </div>`).join('')}
+      </div>
+    </div>
+  `, 'templates');
+}
+
+function viewConversations() {
+  const list = db.conversations.slice().sort((a,b) => b.startedAt - a.startedAt);
+  return shell(`
+    <div class="page-head">
+      <div>
+        <h1>Conversaciones</h1>
+        <div class="sub">${list.length} conversaciones registradas</div>
+      </div>
+    </div>
+    <div class="scroll-area">
+      <div class="card">
+        ${list.length === 0 ? `<div class="empty"><div class="emoji">💬</div><h2>Sin conversaciones todavía</h2></div>` : `
+        <table class="data">
+          <thead><tr><th>Usuario</th><th>Mensajes</th><th>Estado</th><th>Variables capturadas</th><th>Fecha</th></tr></thead>
+          <tbody>
+            ${list.map(c => `
+              <tr>
+                <td><b>${esc(c.userName)}</b></td>
+                <td>${c.messages}</td>
+                <td>${c.completed ? '<span style="color:var(--success);font-weight:600">✓ Completada</span>' : '<span style="color:var(--warn)">En curso</span>'}</td>
+                <td style="color:var(--text-m);font-size:12px">${Object.entries(c.variables||{}).filter(([_,v])=>v).map(([k,v])=>`<b style="color:var(--text)">${esc(k)}:</b> ${esc(v)}`).join(', ') || '—'}</td>
+                <td>${fmtDate(c.startedAt)}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>`}
+      </div>
+    </div>
+  `, 'conversations');
+}
+
+function viewAnalytics() {
+  const totalConvs = db.bots.reduce((s,b) => s + (b.conversations||0), 0);
+  const totalCompleted = db.bots.reduce((s,b) => s + (b.completed||0), 0);
+  // Mini chart - last 14 days fake data
+  const days = 14;
+  const values = Array.from({length: days}, () => Math.floor(Math.random() * 20) + 5);
+  const max = Math.max(...values);
+  return shell(`
+    <div class="page-head">
+      <div><h1>Analytics</h1><div class="sub">Métricas de tus bots</div></div>
+    </div>
+    <div class="scroll-area">
+      <div class="kpi-grid">
+        <div class="kpi"><div class="label">Conversaciones (30d)</div><div class="value">${totalConvs.toLocaleString('es')}</div><div class="trend">↗ +24%</div></div>
+        <div class="kpi"><div class="label">Tasa completadas</div><div class="value">${totalConvs?Math.round(totalCompleted/totalConvs*100):0}%</div><div class="trend">↗ +5%</div></div>
+        <div class="kpi"><div class="label">Tiempo promedio</div><div class="value">2m 14s</div><div class="trend">por conversación</div></div>
+        <div class="kpi"><div class="label">Leads capturados</div><div class="value">${Math.floor(totalCompleted*0.6)}</div><div class="trend">↗ +18%</div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Conversaciones por día · últimos 14 días</h3></div>
+        <div class="card-body">
+          <svg viewBox="0 0 700 200" style="width:100%;height:200px">
+            ${values.map((v, i) => {
+              const x = 30 + (i * (640 / (days - 1)));
+              const h = (v / max) * 150;
+              const y = 180 - h;
+              return `<rect x="${x-12}" y="${y}" width="24" height="${h}" rx="3" fill="url(#bargrad)"/>`;
+            }).join('')}
+            <defs>
+              <linearGradient id="bargrad" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stop-color="#7c3aed"/>
+                <stop offset="100%" stop-color="#ec4899"/>
+              </linearGradient>
+            </defs>
+            ${values.map((v, i) => {
+              const x = 30 + (i * (640 / (days - 1)));
+              const d = new Date(Date.now() - (days-1-i) * 86400000);
+              return `<text x="${x}" y="195" font-size="10" fill="#7a82a0" text-anchor="middle">${d.getDate()}</text>`;
+            }).join('')}
+          </svg>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Top respuestas elegidas</h3></div>
+        <div class="card-body">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            ${[
+              ['Conocer productos', 64],
+              ['Horarios y ubicación', 38],
+              ['Hablar con humano', 21],
+              ['Cancelar pedido', 12],
+            ].map(([label, pct]) => `
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+                  <span>${esc(label)}</span><b>${pct}%</b>
+                </div>
+                <div style="height:8px;background:var(--bg-soft);border-radius:4px;overflow:hidden">
+                  <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--accent),var(--accent-2));border-radius:4px"></div>
+                </div>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+  `, 'analytics');
+}
+
+function viewIntegrations() {
+  const ig = db.integrations;
+  const apiOK = useAPI;
+  return shell(`
+    <div class="page-head">
+      <div>
+        <h1>Integraciones</h1>
+        <div class="sub">Conecta tu bot con IA, WhatsApp, Telegram y más</div>
+      </div>
+    </div>
+    <div class="scroll-area">
+      ${!apiOK ? `
+        <div class="card" style="border-color:var(--warn);background:rgba(245,158,11,.08)">
+          <div class="card-body">
+            <b style="color:var(--warn)">⚠️ Modo sin servidor</b>
+            <p style="margin:6px 0 0;color:var(--text-s);font-size:13px">Estás abriendo el archivo con <b>file://</b>. La IA y WhatsApp necesitan un servidor para funcionar. Ejecuta <code style="background:var(--bg-soft);padding:2px 6px;border-radius:4px">start.bat</code> para activar la API real.</p>
+          </div>
+        </div>
+      ` : ''}
+
+      <div class="card">
+        <div class="card-head">
+          <h3>
+            <span style="display:inline-flex;align-items:center;gap:10px">
+              <span style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#f59e0b,#ef4444);display:inline-flex;align-items:center;justify-content:center">✨</span>
+              IA — Asistente inteligente
+            </span>
+          </h3>
+          <span class="status-tag ${ig.ai.hasKey?'active':'draft'}" style="padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:${ig.ai.hasKey?'rgba(16,185,129,.15)':'var(--bg-soft)'};color:${ig.ai.hasKey?'var(--success)':'var(--text-m)'}">${ig.ai.hasKey?'CONECTADO':'NO CONECTADO'}</span>
+        </div>
+        <div class="card-body">
+          <p style="margin:0 0 14px;color:var(--text-s);font-size:13px">Usa LLMs para respuestas dinámicas. Agrega el step type "✨ IA" a tus flujos y el bot generará respuestas inteligentes basadas en el contexto.</p>
+          <form id="aiForm">
+            <div class="field">
+              <label>Proveedor</label>
+              <select name="provider">
+                <option value="anthropic" ${ig.ai.provider==='anthropic'?'selected':''}>Anthropic Claude</option>
+                <option value="openai" ${ig.ai.provider==='openai'?'selected':''}>OpenAI GPT</option>
+                <option value="demo" ${ig.ai.provider==='demo'?'selected':''}>Demo (sin key, respuestas canned)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Modelo</label>
+              <input type="text" name="model" value="${esc(ig.ai.model)}" placeholder="claude-sonnet-4-6 / gpt-4o-mini" />
+              <div class="hint">Anthropic: <code>claude-sonnet-4-6</code>, <code>claude-opus-4-7</code>. OpenAI: <code>gpt-4o-mini</code>, <code>gpt-4o</code></div>
+            </div>
+            <div class="field">
+              <label>API Key ${ig.ai.hasKey?'<span style="color:var(--success);font-weight:400">· clave guardada en el servidor</span>':''}</label>
+              <input type="password" name="apiKey" placeholder="${ig.ai.hasKey?'•••••••• (deja vacío para no cambiar)':'sk-ant-... o sk-...'}" autocomplete="new-password" />
+              <div class="hint">Se guarda solo en el servidor (db.json), nunca en el navegador</div>
+            </div>
+            <div class="field">
+              <label>Prompt del sistema</label>
+              <textarea name="systemPrompt" rows="3">${esc(ig.ai.systemPrompt)}</textarea>
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end">
+              ${ig.ai.hasKey?`<button type="button" class="btn ghost sm" data-act="clear-ai-key" style="color:var(--danger)">Borrar API key</button>`:''}
+              <button type="submit" class="btn sm">Guardar IA</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h3>
+            <span style="display:inline-flex;align-items:center;gap:10px">
+              <span style="width:32px;height:32px;border-radius:8px;background:#25d366;display:inline-flex;align-items:center;justify-content:center;color:white">💬</span>
+              WhatsApp
+            </span>
+          </h3>
+          <span style="padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:${ig.whatsapp.hasToken?'rgba(16,185,129,.15)':'var(--bg-soft)'};color:${ig.whatsapp.hasToken?'var(--success)':'var(--text-m)'}">${ig.whatsapp.hasToken?'CONECTADO':'NO CONECTADO'}</span>
+        </div>
+        <div class="card-body">
+          <p style="margin:0 0 14px;color:var(--text-s);font-size:13px">Conecta WhatsApp Business Cloud API de Meta. Necesitas:</p>
+          <ol style="font-size:13px;color:var(--text-s);line-height:1.7;padding-left:20px;margin:0 0 16px">
+            <li>Una cuenta en <a href="https://business.facebook.com" target="_blank" style="color:var(--accent)">Meta Business</a></li>
+            <li>Crear una app en developers.facebook.com → WhatsApp Business API</li>
+            <li>Copiar tu Phone Number ID y Access Token permanente</li>
+          </ol>
+          <form id="waForm">
+            <div class="field">
+              <label>Número de teléfono comercial (sin +)</label>
+              <input name="phoneNumber" value="${esc(ig.whatsapp.phoneNumber)}" placeholder="521234567890" />
+            </div>
+            <div class="field">
+              <label>Phone Number ID</label>
+              <input name="phoneNumberId" value="${esc(ig.whatsapp.phoneNumberId)}" placeholder="103XXXXXXXXXX" />
+            </div>
+            <div class="field">
+              <label>Access Token ${ig.whatsapp.hasToken?'<span style="color:var(--success);font-weight:400">· guardado</span>':''}</label>
+              <input type="password" name="accessToken" placeholder="${ig.whatsapp.hasToken?'•••••••• (deja vacío para no cambiar)':'EAAxxxxxxxxxxxx'}" autocomplete="new-password" />
+            </div>
+            <div class="field">
+              <label>Webhook URL (configura esto en Meta)</label>
+              <div style="display:flex;gap:6px;align-items:center">
+                <input type="text" value="${apiOK?location.origin+'/api/whatsapp/webhook':'(arranca el servidor primero)'}" readonly style="font-family:ui-monospace,monospace;font-size:12px;background:var(--bg-soft)" />
+                <button type="button" class="btn ghost sm" data-act="copy-webhook">📋</button>
+              </div>
+            </div>
+            <div class="field">
+              <label>Verify Token (cópialo en Meta)</label>
+              <input name="verifyToken" value="${esc(ig.whatsapp.verifyToken)}" placeholder="cualquier-cadena-secreta" />
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end">
+              ${ig.whatsapp.hasToken?`<button type="button" class="btn ghost sm" data-act="clear-wa-token" style="color:var(--danger)">Borrar token</button>`:''}
+              ${ig.whatsapp.phoneNumber?`<a class="btn ghost sm" target="_blank" href="https://wa.me/${esc(ig.whatsapp.phoneNumber.replace(/\\D/g,''))}?text=hola">Probar wa.me →</a>`:''}
+              <button type="submit" class="btn sm">Guardar WhatsApp</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h3>
+            <span style="display:inline-flex;align-items:center;gap:10px">
+              <span style="width:32px;height:32px;border-radius:8px;background:#0088cc;display:inline-flex;align-items:center;justify-content:center;color:white">✈️</span>
+              Telegram
+            </span>
+          </h3>
+          <span style="padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:var(--bg-soft);color:var(--text-m)">${ig.telegram.hasToken?'CONECTADO':'NO CONECTADO'}</span>
+        </div>
+        <div class="card-body">
+          <p style="margin:0 0 14px;color:var(--text-s);font-size:13px">Crea un bot con <a href="https://t.me/botfather" target="_blank" style="color:var(--accent)">@BotFather</a> y pega aquí el token.</p>
+          <form id="tgForm">
+            <div class="field">
+              <label>Bot Username (sin @)</label>
+              <input name="botName" value="${esc(ig.telegram.botName)}" placeholder="mibotnombre_bot" />
+            </div>
+            <div class="field">
+              <label>Bot Token ${ig.telegram.hasToken?'<span style="color:var(--success);font-weight:400">· guardado</span>':''}</label>
+              <input type="password" name="botToken" placeholder="${ig.telegram.hasToken?'••••••••':'1234567890:ABC-def...'}" autocomplete="new-password" />
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end">
+              ${ig.telegram.botName?`<a class="btn ghost sm" target="_blank" href="https://t.me/${esc(ig.telegram.botName)}">Abrir bot →</a>`:''}
+              <button type="submit" class="btn sm">Guardar Telegram</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h3>
+            <span style="display:inline-flex;align-items:center;gap:10px">
+              <span style="width:32px;height:32px;border-radius:8px;background:#0084ff;display:inline-flex;align-items:center;justify-content:center;color:white">💙</span>
+              Messenger
+            </span>
+          </h3>
+          <span style="padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:${ig.messenger.hasToken?'rgba(16,185,129,.15)':'var(--bg-soft)'};color:${ig.messenger.hasToken?'var(--success)':'var(--text-m)'}">${ig.messenger.hasToken?'CONECTADO':'NO CONECTADO'}</span>
+        </div>
+        <div class="card-body">
+          <p style="margin:0 0 14px;color:var(--text-s);font-size:13px">Conecta una página de Facebook a tu bot. Necesitas un <a href="https://developers.facebook.com/tools/explorer/" target="_blank" style="color:var(--accent)">Page Access Token</a> con permisos <code>pages_messaging</code>.</p>
+          <form id="msgForm">
+            <div class="field">
+              <label>Page ID</label>
+              <input name="pageId" value="${esc(ig.messenger.pageId)}" placeholder="100XXXXXXXXXX" />
+            </div>
+            <div class="field">
+              <label>Nombre de la página (opcional)</label>
+              <input name="pageName" value="${esc(ig.messenger.pageName)}" placeholder="Mi Página" />
+            </div>
+            <div class="field">
+              <label>Page Access Token ${ig.messenger.hasToken?'<span style="color:var(--success);font-weight:400">· guardado</span>':''}</label>
+              <input type="password" name="accessToken" placeholder="${ig.messenger.hasToken?'•••••••• (deja vacío para no cambiar)':'EAAxxxxxxxxxxxx'}" autocomplete="new-password" />
+            </div>
+            <div class="field">
+              <label>Webhook URL (configura en Meta)</label>
+              <div style="display:flex;gap:6px;align-items:center">
+                <input type="text" value="${apiOK?location.origin+'/api/messenger/webhook':'(arranca el servidor)'}" readonly style="font-family:ui-monospace,monospace;font-size:12px;background:var(--bg-soft)" />
+                <button type="button" class="btn ghost sm" data-act="copy-webhook-msg">📋</button>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end">
+              ${ig.messenger.hasToken?`<button type="button" class="btn ghost sm" data-act="clear-msg-token" style="color:var(--danger)">Borrar token</button>`:''}
+              ${ig.messenger.pageId?`<a class="btn ghost sm" target="_blank" href="https://m.me/${esc(ig.messenger.pageId)}">Abrir en m.me →</a>`:''}
+              <button type="submit" class="btn sm">Guardar Messenger</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h3>
+            <span style="display:inline-flex;align-items:center;gap:10px">
+              <span style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#feda75,#d62976,#962fbf);display:inline-flex;align-items:center;justify-content:center;color:white">📷</span>
+              Instagram
+            </span>
+          </h3>
+          <span style="padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:${ig.instagram.hasToken?'rgba(16,185,129,.15)':'var(--bg-soft)'};color:${ig.instagram.hasToken?'var(--success)':'var(--text-m)'}">${ig.instagram.hasToken?'CONECTADO':'NO CONECTADO'}</span>
+        </div>
+        <div class="card-body">
+          <p style="margin:0 0 14px;color:var(--text-s);font-size:13px">Para mensajes directos en Instagram. Requiere <b>cuenta Business</b> conectada a una Página de Facebook + permisos <code>instagram_manage_messages</code>.</p>
+          <form id="igForm">
+            <div class="field">
+              <label>Instagram Account ID</label>
+              <input name="accountId" value="${esc(ig.instagram.accountId)}" placeholder="178XXXXXXXXXX" />
+            </div>
+            <div class="field">
+              <label>Username (sin @)</label>
+              <input name="username" value="${esc(ig.instagram.username)}" placeholder="micuenta" />
+            </div>
+            <div class="field">
+              <label>Access Token ${ig.instagram.hasToken?'<span style="color:var(--success);font-weight:400">· guardado</span>':''}</label>
+              <input type="password" name="accessToken" placeholder="${ig.instagram.hasToken?'•••••••• (deja vacío)':'EAAxxxxxxxxxxxx'}" autocomplete="new-password" />
+            </div>
+            <div class="field">
+              <label>Webhook URL</label>
+              <div style="display:flex;gap:6px;align-items:center">
+                <input type="text" value="${apiOK?location.origin+'/api/instagram/webhook':'(arranca el servidor)'}" readonly style="font-family:ui-monospace,monospace;font-size:12px;background:var(--bg-soft)" />
+                <button type="button" class="btn ghost sm" data-act="copy-webhook-ig">📋</button>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end">
+              ${ig.instagram.hasToken?`<button type="button" class="btn ghost sm" data-act="clear-ig-token" style="color:var(--danger)">Borrar token</button>`:''}
+              ${ig.instagram.username?`<a class="btn ghost sm" target="_blank" href="https://instagram.com/${esc(ig.instagram.username)}">Ver perfil →</a>`:''}
+              <button type="submit" class="btn sm">Guardar Instagram</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="card-head">
+          <h3>Widget web</h3>
+          <span style="padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:rgba(16,185,129,.15);color:var(--success)">SIEMPRE ACTIVO</span>
+        </div>
+        <div class="card-body">
+          <p style="margin:0 0 12px;color:var(--text-s);font-size:13px">Embebe el bot en tu sitio con este snippet:</p>
+          <div style="background:#0a0d18;border-radius:8px;padding:14px;font-family:ui-monospace,monospace;font-size:12px;color:var(--text-s);overflow-x:auto">&lt;script src="${apiOK?location.origin:'TU_SERVER'}/widget.js" data-bot-id="..."&gt;&lt;/script&gt;</div>
+          <p style="font-size:11px;color:var(--text-m);margin:8px 0 0">El widget aparece como burbuja flotante abajo a la derecha de tu sitio.</p>
+        </div>
+      </div>
+    </div>
+  `, 'integrations');
+}
+
+function viewSettings() {
+  return shell(`
+    <div class="page-head">
+      <div><h1>Configuración</h1></div>
+    </div>
+    <div class="scroll-area">
+      <form id="settingsForm" style="max-width:600px">
+        <div class="card">
+          <div class="card-head"><h3>Cuenta</h3></div>
+          <div class="card-body">
+            <div class="field">
+              <label>Nombre del negocio</label>
+              <input name="businessName" value="${esc(db.settings.businessName)}" required />
+              <div class="hint">Se usa como {{negocio}} en los flujos</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>Servidor / API</h3></div>
+          <div class="card-body">
+            <div class="field">
+              <label>URL del backend remoto</label>
+              <input id="apiUrlInput" value="${esc(REMOTE_API_URL)}" placeholder="https://nexa-nwx.onrender.com" />
+              <div class="hint">Si subes el frontend a Hostinger y el backend a Render, pega aquí la URL pública de Render. Si está vacío usa el mismo origen.</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <button type="button" class="btn ghost sm" data-act="save-api-url">Guardar URL</button>
+              <button type="button" class="btn ghost sm" data-act="test-api">Probar conexión</button>
+              ${REMOTE_API_URL?`<button type="button" class="btn ghost sm" data-act="clear-api-url" style="color:var(--danger);margin-left:auto">Quitar URL</button>`:''}
+            </div>
+            <div style="margin-top:10px;font-size:12px;color:var(--text-m)">
+              Estado: ${useAPI?`<b style="color:var(--success)">conectado a ${esc(apiBase || location.origin)}</b>`:`<b style="color:var(--warn)">modo localStorage (sin backend)</b>`}
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button type="button" class="btn ghost" style="color:var(--danger)" data-act="reset-all">Resetear todo</button>
+          <button type="submit" class="btn">Guardar</button>
+        </div>
+      </form>
+    </div>
+  `, 'settings');
+}
+
+// ============================================================
+// EDITOR
+// ============================================================
+let currentBot = null;
+let selectedStepId = null;
+let sideTab = 'preview';
+
+function viewEditor(params) {
+  currentBot = botById(params.id);
+  if (!currentBot) return shell(`<div class="empty"><div class="emoji">🔍</div><h2>Bot no encontrado</h2></div>`, 'bots');
+
+  return `
+    <aside class="side">
+      <div class="brand">
+        <span class="mark">N</span>
+        <span>Nexa <span style="font-size:10px;font-weight:700;color:var(--text-l);background:var(--bg-soft);padding:2px 6px;border-radius:4px;letter-spacing:.5px;vertical-align:middle">NWX</span></span>
+      </div>
+      <div class="side-nav">
+        <a class="nav-item" href="#/"><span class="ico">${I.back}</span> Volver a bots</a>
+        <div class="side-section">Flujo</div>
+        <div style="padding:0 12px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+            <div style="width:36px;height:36px;border-radius:8px;background:${currentBot.color};display:flex;align-items:center;justify-content:center;font-size:18px">${currentBot.emoji}</div>
+            <div style="flex:1;min-width:0">
+              <input type="text" id="botNameInput" value="${esc(currentBot.name)}" style="background:transparent;border:none;color:var(--text);font-weight:700;width:100%;font-size:14px;padding:0" />
+              <div style="font-size:11px;color:var(--text-m)">${currentBot.flow.length} pasos</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:13px;color:var(--text-s)">Estado</span>
+            <label class="toggle">
+              <input type="checkbox" id="activeToggle" ${currentBot.active?'checked':''} />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div style="font-size:11px;color:var(--text-m);margin-bottom:14px">${currentBot.active ? '🟢 Activo · Recibiendo conversaciones' : '⚪ Borrador · No visible'}</div>
+        </div>
+        <div class="side-section">Variables</div>
+        <div style="padding:0 16px;font-size:12px;color:var(--text-s)" id="varsList"></div>
+        <div class="side-section">Lienzo</div>
+        <button type="button" class="nav-item" data-act="add-step-modal" style="background:none;border:none;width:100%;text-align:left">
+          <span class="ico">${I.plus}</span> Agregar paso
+        </button>
+        <button type="button" class="nav-item" data-act="reset-flow" style="background:none;border:none;width:100%;text-align:left;color:var(--danger)">
+          <span class="ico">${I.refresh}</span> Reiniciar flujo
+        </button>
+      </div>
+    </aside>
+    <main>
+      <div class="page-head">
+        <div>
+          <h1 id="botNameDisplay">${esc(currentBot.name)}</h1>
+          <div class="sub">Construye el flujo paso a paso. Los cambios se guardan automáticamente.</div>
+        </div>
+        <div class="actions">
+          <button type="button" class="btn ghost sm" data-act="duplicate-bot">${I.copy} Duplicar</button>
+          <button type="button" class="btn ghost sm" style="color:var(--danger)" data-act="delete-bot">${I.trash} Eliminar</button>
+          <button type="button" class="btn sm" data-act="test-now">${I.play} Probar</button>
+        </div>
+      </div>
+      <div class="editor">
+        <div class="editor-canvas" id="canvas">${renderFlow()}</div>
+        <div class="editor-side">
+          <div class="side-tabs">
+            <button type="button" class="side-tab ${sideTab==='preview'?'active':''}" data-tab="preview">${I.chat} Probar</button>
+            <button type="button" class="side-tab ${sideTab==='inspector'?'active':''}" data-tab="inspector">⚙ Paso seleccionado</button>
+          </div>
+          <div class="side-content" id="sideContent">${sideTab === 'preview' ? renderPreviewPanel() : renderInspector()}</div>
+        </div>
+      </div>
+    </main>
+  `;
+}
+
+function renderFlow() {
+  const bot = currentBot;
+  if (!bot) return '';
+  return `
+    <div class="flow-container">
+      <div class="flow-start">${I.play} Inicio</div>
+      <div class="flow-arrow">↓</div>
+      ${bot.flow.map((s, idx) => {
+        if (s.type === 'end') {
+          return `${idx > 0 && bot.flow[idx-1].type !== 'buttons' ? '<div class="flow-arrow">↓</div>' : ''}<div class="flow-end-node">🏁 Fin${s.content?' · '+esc(s.content.slice(0,40)):''}</div>`;
+        }
+        return renderNode(s, idx);
+      }).join('<div class="flow-arrow">↓</div>')}
+      <div class="flow-arrow">↓</div>
+      <button type="button" class="add-step-btn" data-act="add-step-modal">${I.plus} Agregar paso</button>
+    </div>`;
+}
+
+function renderNode(step, idx) {
+  const t = STEP_TYPES[step.type] || STEP_TYPES.message;
+  const selected = selectedStepId === step.id;
+  return `
+    <div class="node ${selected?'selected':''}" data-step="${step.id}">
+      <div class="node-head">
+        <div class="type-icon" style="background:${t.color}">${t.icon}</div>
+        <span class="type-label">${t.label}</span>
+        <span class="id">${esc(step.id)}</span>
+        <button type="button" class="del-btn" data-del-step="${step.id}" title="Eliminar">✕</button>
+      </div>
+      <div class="node-body">
+        <div class="content-preview ${!step.content?'placeholder':''}">${step.content ? esc(step.content) : '(sin contenido)'}</div>
+        ${step.variable ? `<span class="variable">→ {{${esc(step.variable)}}}</span>` : ''}
+        ${step.type === 'buttons' && step.options ? `
+          <div class="branches">
+            ${step.options.map(o => `
+              <div class="branch">
+                <span class="label">${esc(o.label)}</span>
+                <span class="target">→ ${esc(o.next || 'fin')}</span>
+              </div>`).join('')}
+          </div>` : ''}
+        ${step.next && step.type !== 'buttons' ? `<div style="margin-top:8px;font-size:11px;color:var(--text-m)">Siguiente: <b style="color:var(--text-s);font-family:ui-monospace,monospace">${esc(step.next)}</b></div>` : ''}
+        ${step.actionType ? `<div style="margin-top:6px;font-size:11px;color:var(--accent)">⚡ Acción: ${esc(step.actionType)}</div>` : ''}
+      </div>
+    </div>`;
+}
+
+function renderPreviewPanel() {
+  if (!currentBot) return '';
+  return `
+    <div class="chat-preview">
+      <div class="chat-header">
+        <div class="avatar" style="background:${currentBot.color}">${currentBot.emoji}</div>
+        <div class="info">
+          <b>${esc(currentBot.name)}</b>
+          <div class="stat">en línea</div>
+        </div>
+        <button type="button" class="btn ghost sm" data-act="restart-preview" style="margin-left:auto" title="Reiniciar">${I.refresh}</button>
+      </div>
+      <div class="chat-body" id="chatBody"></div>
+      <div class="chat-input">
+        <input type="text" id="chatInput" placeholder="Escribe..." autocomplete="off" />
+        <button type="button" class="send" id="chatSend">${I.send}</button>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--text-m);margin-top:12px;text-align:center">
+      Probando flujo en vivo · Los cambios se aplican al recargar
+    </div>`;
+}
+
+function renderInspector() {
+  if (!selectedStepId) {
+    return `<div style="text-align:center;padding:40px 16px;color:var(--text-m)">
+      <div style="font-size:32px;margin-bottom:8px">👈</div>
+      <p>Haz clic en un paso del lienzo para editarlo</p>
+    </div>`;
+  }
+  const step = stepInBot(currentBot, selectedStepId);
+  if (!step) return '';
+  const t = STEP_TYPES[step.type] || STEP_TYPES.message;
+  const nextOptions = currentBot.flow.filter(s => s.id !== step.id).map(s => `<option value="${s.id}" ${step.next===s.id?'selected':''}>${esc(s.id)} · ${STEP_TYPES[s.type]?.label || s.type}${s.content?' — '+esc(s.content.slice(0,30)):''}</option>`).join('');
+
+  return `
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <div style="width:36px;height:36px;border-radius:8px;background:${t.color};display:flex;align-items:center;justify-content:center;font-size:16px">${t.icon}</div>
+        <div>
+          <div style="font-weight:700;text-transform:uppercase;font-size:12px;letter-spacing:.4px;color:var(--text-s)">${t.label}</div>
+          <div style="font-size:11px;color:var(--text-m);font-family:ui-monospace,monospace">${esc(step.id)}</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Tipo de paso</label>
+        <select id="stepType">
+          ${Object.entries(STEP_TYPES).map(([k,v]) => `<option value="${k}" ${step.type===k?'selected':''}>${v.icon} ${v.label}</option>`).join('')}
+        </select>
+        <div class="hint">${t.desc}</div>
+      </div>
+
+      ${step.type !== 'end' && step.type !== 'delay' ? `
+        <div class="field">
+          <label>${step.type === 'buttons' ? 'Mensaje antes de las opciones' : step.type === 'question' ? 'Pregunta al usuario' : 'Mensaje'}</label>
+          <textarea id="stepContent" placeholder="Escribe el mensaje... usa {{variable}} para personalizar">${esc(step.content||'')}</textarea>
+          <div class="hint">Variables disponibles: ${listVariables().map(v => `<code>{{${v}}}</code>`).join(', ') || 'aún ninguna'}</div>
+        </div>
+      ` : ''}
+
+      ${step.type === 'question' ? `
+        <div class="field">
+          <label>Guardar respuesta en variable</label>
+          <input type="text" id="stepVariable" value="${esc(step.variable||'')}" placeholder="nombre, email, edad..." />
+        </div>
+        <div class="field">
+          <label>Validación</label>
+          <select id="stepValidate">
+            <option value="" ${!step.validate?'selected':''}>Sin validación</option>
+            <option value="email" ${step.validate==='email'?'selected':''}>Email</option>
+            <option value="phone" ${step.validate==='phone'?'selected':''}>Teléfono</option>
+            <option value="number" ${step.validate==='number'?'selected':''}>Número</option>
+          </select>
+        </div>
+      ` : ''}
+
+      ${step.type === 'buttons' ? `
+        <div class="field">
+          <label>Opciones (botones)</label>
+          <div id="optionsList">
+            ${(step.options||[]).map((o, i) => `
+              <div class="option-row">
+                <input type="text" data-opt-label="${i}" value="${esc(o.label)}" placeholder="Texto del botón" />
+                <select data-opt-next="${i}">
+                  ${currentBot.flow.filter(s => s.id !== step.id).map(s => `<option value="${s.id}" ${o.next===s.id?'selected':''}>→ ${esc(s.id)}</option>`).join('')}
+                </select>
+                <button type="button" class="rm" data-opt-rm="${i}">✕</button>
+              </div>`).join('')}
+          </div>
+          <button type="button" class="btn ghost sm" data-act="add-option" style="margin-top:6px">${I.plus} Agregar opción</button>
+        </div>
+        <div class="field">
+          <label>Guardar elección en variable (opcional)</label>
+          <input type="text" id="stepVariable" value="${esc(step.variable||'')}" placeholder="ej: interes" />
+        </div>
+      ` : ''}
+
+      ${step.type === 'action' ? `
+        <div class="field">
+          <label>Tipo de acción</label>
+          <select id="stepActionType">
+            <option value="email" ${step.actionType==='email'?'selected':''}>Enviar email</option>
+            <option value="webhook" ${step.actionType==='webhook'?'selected':''}>Webhook HTTP</option>
+            <option value="notify" ${step.actionType==='notify'?'selected':''}>Notificar al equipo</option>
+            <option value="tag" ${step.actionType==='tag'?'selected':''}>Agregar etiqueta</option>
+            <option value="ticket" ${step.actionType==='ticket'?'selected':''}>Crear ticket</option>
+          </select>
+        </div>
+      ` : ''}
+
+      ${step.type === 'delay' ? `
+        <div class="field">
+          <label>Pausa (segundos)</label>
+          <input type="number" id="stepDelay" min="0" step="0.5" value="${step.delay||1}" />
+        </div>
+      ` : ''}
+
+      ${step.type !== 'end' && step.type !== 'buttons' && step.type !== 'condition' ? `
+        <div class="field">
+          <label>Siguiente paso</label>
+          <select id="stepNext">
+            ${nextOptions}
+          </select>
+        </div>
+      ` : ''}
+
+      <button type="button" class="btn danger" style="margin-top:8px;width:100%" data-del-step="${step.id}">${I.trash} Eliminar este paso</button>
+    </div>`;
+}
+
+function listVariables() {
+  if (!currentBot) return [];
+  const vars = new Set();
+  currentBot.flow.forEach(s => {
+    if (s.variable) vars.add(s.variable);
+  });
+  return [...vars];
+}
+
+// ============================================================
+// CHAT SIMULATOR
+// ============================================================
+let chatState = null;
+
+function startChat() {
+  chatState = {
+    currentStepId: currentBot.flow[0]?.id,
+    variables: {},
+    waitingFor: null, // null | 'text' | 'buttons'
+    history: [],
+  };
+  const body = $('#chatBody');
+  if (body) body.innerHTML = '';
+  setTimeout(processStep, 200);
+}
+
+function interpolate(s) {
+  if (!s) return '';
+  return s.replace(/\{\{(\w+)\}\}/g, (m, k) => {
+    if (k === 'negocio') return db.settings.businessName;
+    return chatState.variables[k] || `{{${k}}}`;
+  });
+}
+
+function appendMessage(role, content, opts = {}) {
+  const body = $('#chatBody');
+  if (!body) return;
+  if (opts.buttons) {
+    const wrap = document.createElement('div');
+    wrap.className = 'msg-buttons';
+    opts.buttons.forEach((b, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'msg-btn';
+      btn.textContent = b.label;
+      btn.dataset.idx = i;
+      btn.type = 'button';
+      wrap.appendChild(btn);
+    });
+    body.appendChild(wrap);
+    wrap.querySelectorAll('.msg-btn').forEach(b => b.addEventListener('click', () => {
+      const idx = parseInt(b.dataset.idx);
+      wrap.querySelectorAll('button').forEach(x => x.disabled = true);
+      b.style.background = 'var(--accent)';
+      b.style.color = 'white';
+      handleButtonChoice(idx);
+    }));
+  } else {
+    const m = document.createElement('div');
+    m.className = 'msg ' + role;
+    m.textContent = content;
+    body.appendChild(m);
+  }
+  body.scrollTop = body.scrollHeight;
+}
+
+function appendTyping() {
+  const body = $('#chatBody');
+  if (!body) return null;
+  const m = document.createElement('div');
+  m.className = 'msg bot';
+  m.innerHTML = `<span class="typing"><span></span><span></span><span></span></span>`;
+  body.appendChild(m);
+  body.scrollTop = body.scrollHeight;
+  return m;
+}
+
+async function processStep() {
+  if (!chatState || !chatState.currentStepId) return;
+  const step = stepInBot(currentBot, chatState.currentStepId);
+  if (!step) {
+    appendMessage('system', 'Flujo terminado (paso no encontrado).');
+    return;
+  }
+
+  if (step.type === 'end') {
+    if (step.content) {
+      const typing = appendTyping();
+      await new Promise(r => setTimeout(r, 600));
+      typing?.remove();
+      appendMessage('bot', interpolate(step.content));
+    }
+    appendMessage('system', '✓ Conversación finalizada');
+    chatState.waitingFor = null;
+    return;
+  }
+
+  if (step.type === 'message') {
+    const typing = appendTyping();
+    await new Promise(r => setTimeout(r, 500 + Math.min(step.content?.length || 0, 50) * 10));
+    typing?.remove();
+    appendMessage('bot', interpolate(step.content || ''));
+    chatState.currentStepId = step.next;
+    setTimeout(processStep, 300);
+    return;
+  }
+
+  if (step.type === 'question') {
+    const typing = appendTyping();
+    await new Promise(r => setTimeout(r, 500));
+    typing?.remove();
+    appendMessage('bot', interpolate(step.content || ''));
+    chatState.waitingFor = 'text';
+    chatState._currentStep = step;
+    return;
+  }
+
+  if (step.type === 'buttons') {
+    const typing = appendTyping();
+    await new Promise(r => setTimeout(r, 500));
+    typing?.remove();
+    appendMessage('bot', interpolate(step.content || ''));
+    appendMessage('bot', null, { buttons: step.options || [] });
+    chatState.waitingFor = 'buttons';
+    chatState._currentStep = step;
+    return;
+  }
+
+  if (step.type === 'ai') {
+    const typing = appendTyping();
+    const ctxMsg = `Contexto de la conversación hasta ahora:\n${Object.entries(chatState.variables).map(([k,v]) => `- ${k}: ${v}`).join('\n') || '(sin datos aún)'}\n\nUsuario está esperando respuesta.${step.content ? ' Instrucción específica: ' + interpolate(step.content) : ''}`;
+    const messages = chatState.history.length ? chatState.history : [{ role:'user', content: ctxMsg }];
+    const res = await aiChat(messages, step.systemPrompt || db.integrations?.ai?.systemPrompt);
+    typing?.remove();
+    appendMessage('bot', res.reply || '(sin respuesta)');
+    if (step.variable && res.reply) chatState.variables[step.variable] = res.reply;
+    chatState.history.push({ role:'assistant', content: res.reply || '' });
+    chatState.currentStepId = step.next;
+    setTimeout(processStep, 400);
+    return;
+  }
+
+  if (step.type === 'action') {
+    appendMessage('system', `⚡ Acción ejecutada: ${step.actionType} → ${interpolate(step.content || '')}`);
+    chatState.currentStepId = step.next;
+    setTimeout(processStep, 400);
+    return;
+  }
+
+  if (step.type === 'delay') {
+    appendMessage('system', `⏱ Esperando ${step.delay||1}s...`);
+    await new Promise(r => setTimeout(r, (step.delay||1) * 1000));
+    chatState.currentStepId = step.next;
+    setTimeout(processStep, 100);
+    return;
+  }
+
+  // Default: move on
+  chatState.currentStepId = step.next;
+  setTimeout(processStep, 100);
+}
+
+function handleUserText(text) {
+  if (!chatState || chatState.waitingFor !== 'text') return;
+  const step = chatState._currentStep;
+  // basic validate
+  if (step.validate === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text)) {
+    appendMessage('user', text);
+    appendMessage('bot', '⚠ El email no parece válido. Intenta de nuevo.');
+    return;
+  }
+  appendMessage('user', text);
+  if (step.variable) chatState.variables[step.variable] = text;
+  chatState.waitingFor = null;
+  chatState.currentStepId = step.next;
+  setTimeout(processStep, 400);
+}
+
+function handleButtonChoice(idx) {
+  if (!chatState || chatState.waitingFor !== 'buttons') return;
+  const step = chatState._currentStep;
+  const opt = step.options[idx];
+  appendMessage('user', opt.label);
+  if (step.variable) chatState.variables[step.variable] = opt.label;
+  chatState.waitingFor = null;
+  chatState.currentStepId = opt.next;
+  setTimeout(processStep, 400);
+}
+
+// ============================================================
+// ROUTES
+// ============================================================
+route('/', () => viewBots());
+route('/plantillas', () => viewTemplates());
+route('/bot/:id', p => viewEditor(p));
+route('/conversaciones', () => viewConversations());
+route('/analytics', () => viewAnalytics());
+route('/integraciones', () => viewIntegrations());
+route('/configuracion', () => viewSettings());
+
+// ============================================================
+// RENDER
+// ============================================================
+function render() {
+  try {
+    cur = parseHash();
+    const app = $('#app');
+    const content = cur.h(cur.params, cur.query) || '';
+    app.innerHTML = content;
+    wireHandlers();
+    if (cur.path.startsWith('/bot/')) {
+      updateVars();
+      if (sideTab === 'preview') startChat();
+    }
+  } catch (e) {
+    console.error(e);
+    $('#app').innerHTML = `<div class="empty"><div class="emoji">⚠️</div><h2>Algo falló</h2><p>${esc(e.message)}</p><button class="btn danger" onclick="localStorage.clear();location.hash='';location.reload()">Resetear</button></div>`;
+  }
+}
+
+function updateVars() {
+  const el = $('#varsList');
+  if (!el) return;
+  const vars = listVariables();
+  if (vars.length === 0) {
+    el.innerHTML = '<span style="color:var(--text-l)">Ninguna aún</span>';
+  } else {
+    el.innerHTML = vars.map(v => `<div style="margin-bottom:4px;font-family:ui-monospace,monospace;font-size:11px;color:var(--accent)">{{${esc(v)}}}</div>`).join('');
+  }
+}
+
+function wireHandlers() {
+  // Generic link rows
+  $$('[data-link]').forEach(el => el.addEventListener('click', e => {
+    if (e.target.closest('a, button')) return;
+    location.hash = el.dataset.link;
+  }));
+
+  // Template clicks
+  $$('[data-template]').forEach(el => el.addEventListener('click', () => {
+    const tpl = templates().find(t => t.id === el.dataset.template);
+    if (!tpl) return;
+    const newBot = {
+      id: uid(),
+      name: tpl.name,
+      emoji: tpl.emoji,
+      color: tpl.color,
+      welcomeMsg: tpl.welcomeMsg,
+      flow: JSON.parse(JSON.stringify(tpl.flow)),
+      channel: 'web',
+      active: false,
+      createdAt: Date.now(),
+      conversations: 0,
+      completed: 0,
+    };
+    db.bots.unshift(newBot);
+    saveDB();
+    toast('Bot creado desde plantilla');
+    navigate('/bot/' + newBot.id);
+  }));
+
+  // Editor: node clicks
+  $$('[data-step]').forEach(n => n.addEventListener('click', e => {
+    if (e.target.closest('[data-del-step], button')) return;
+    selectedStepId = n.dataset.step;
+    sideTab = 'inspector';
+    refreshEditor();
+  }));
+
+  // Editor: delete step
+  $$('[data-del-step]').forEach(b => b.addEventListener('click', e => {
+    e.stopPropagation();
+    const id = b.dataset.delStep;
+    if (currentBot.flow.length <= 1) { toast('No puedes eliminar el último paso'); return; }
+    if (confirm('¿Eliminar este paso? Las referencias se romperán.')) {
+      currentBot.flow = currentBot.flow.filter(s => s.id !== id);
+      // also fix next references that point to it
+      currentBot.flow.forEach(s => {
+        if (s.next === id) s.next = currentBot.flow[currentBot.flow.length - 1]?.id;
+        if (s.options) s.options.forEach(o => { if (o.next === id) o.next = currentBot.flow[currentBot.flow.length - 1]?.id; });
+      });
+      if (selectedStepId === id) selectedStepId = null;
+      saveDB();
+      refreshEditor();
+    }
+  }));
+
+  // Bot name input
+  const bn = $('#botNameInput');
+  if (bn) bn.addEventListener('input', e => {
+    currentBot.name = e.target.value;
+    $('#botNameDisplay').textContent = e.target.value;
+    saveDB();
+  });
+  $('#activeToggle')?.addEventListener('change', e => {
+    currentBot.active = e.target.checked;
+    saveDB();
+    refreshEditor();
+  });
+
+  // Side tabs
+  $$('.side-tab').forEach(t => t.addEventListener('click', () => {
+    sideTab = t.dataset.tab;
+    refreshSide();
+  }));
+
+  // Chat
+  $('#chatSend')?.addEventListener('click', sendChatMsg);
+  $('#chatInput')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') sendChatMsg();
+  });
+
+  // Inspector form changes
+  $('#stepType')?.addEventListener('change', e => {
+    const step = stepInBot(currentBot, selectedStepId);
+    if (step) {
+      step.type = e.target.value;
+      // Reset some fields based on type
+      if (step.type === 'buttons' && !step.options) step.options = [{ label:'Opción 1', next:currentBot.flow[0]?.id }];
+      saveDB();
+      refreshEditor();
+    }
+  });
+  $('#stepContent')?.addEventListener('input', e => {
+    const step = stepInBot(currentBot, selectedStepId);
+    if (step) { step.content = e.target.value; saveDB(); refreshCanvas(); }
+  });
+  $('#stepVariable')?.addEventListener('input', e => {
+    const step = stepInBot(currentBot, selectedStepId);
+    if (step) { step.variable = e.target.value; saveDB(); refreshCanvas(); updateVars(); }
+  });
+  $('#stepValidate')?.addEventListener('change', e => {
+    const step = stepInBot(currentBot, selectedStepId);
+    if (step) { step.validate = e.target.value; saveDB(); }
+  });
+  $('#stepActionType')?.addEventListener('change', e => {
+    const step = stepInBot(currentBot, selectedStepId);
+    if (step) { step.actionType = e.target.value; saveDB(); refreshCanvas(); }
+  });
+  $('#stepDelay')?.addEventListener('input', e => {
+    const step = stepInBot(currentBot, selectedStepId);
+    if (step) { step.delay = parseFloat(e.target.value) || 1; saveDB(); }
+  });
+  $('#stepNext')?.addEventListener('change', e => {
+    const step = stepInBot(currentBot, selectedStepId);
+    if (step) { step.next = e.target.value; saveDB(); refreshCanvas(); }
+  });
+
+  // Buttons options editing
+  $$('[data-opt-label]').forEach(inp => inp.addEventListener('input', e => {
+    const step = stepInBot(currentBot, selectedStepId);
+    const i = parseInt(e.target.dataset.optLabel);
+    if (step?.options[i]) { step.options[i].label = e.target.value; saveDB(); refreshCanvas(); }
+  }));
+  $$('[data-opt-next]').forEach(sel => sel.addEventListener('change', e => {
+    const step = stepInBot(currentBot, selectedStepId);
+    const i = parseInt(e.target.dataset.optNext);
+    if (step?.options[i]) { step.options[i].next = e.target.value; saveDB(); refreshCanvas(); }
+  }));
+  $$('[data-opt-rm]').forEach(b => b.addEventListener('click', () => {
+    const step = stepInBot(currentBot, selectedStepId);
+    const i = parseInt(b.dataset.optRm);
+    if (step?.options) { step.options.splice(i, 1); saveDB(); refreshSide(); refreshCanvas(); }
+  }));
+
+  // Settings form
+  $('#settingsForm')?.addEventListener('submit', e => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    Object.assign(db.settings, Object.fromEntries(fd));
+    saveDB(); toast('Guardado'); render();
+  });
+
+  // Global actions
+  document.addEventListener('click', globalActions);
+}
+
+function sendChatMsg() {
+  const inp = $('#chatInput');
+  if (!inp || !inp.value.trim()) return;
+  const text = inp.value.trim();
+  inp.value = '';
+  handleUserText(text);
+}
+
+function refreshCanvas() {
+  const c = $('#canvas');
+  if (c) c.innerHTML = renderFlow();
+  // re-wire
+  $$('[data-step]').forEach(n => n.addEventListener('click', e => {
+    if (e.target.closest('[data-del-step], button')) return;
+    selectedStepId = n.dataset.step;
+    sideTab = 'inspector';
+    refreshEditor();
+  }));
+  $$('[data-del-step]').forEach(b => b.addEventListener('click', e => {
+    e.stopPropagation();
+    const id = b.dataset.delStep;
+    if (currentBot.flow.length <= 1) { toast('No puedes eliminar el último paso'); return; }
+    if (confirm('¿Eliminar este paso?')) {
+      currentBot.flow = currentBot.flow.filter(s => s.id !== id);
+      currentBot.flow.forEach(s => {
+        if (s.next === id) s.next = currentBot.flow.at(-1)?.id;
+        if (s.options) s.options.forEach(o => { if (o.next === id) o.next = currentBot.flow.at(-1)?.id; });
+      });
+      if (selectedStepId === id) selectedStepId = null;
+      saveDB();
+      refreshEditor();
+    }
+  }));
+}
+
+function refreshSide() {
+  const c = $('#sideContent');
+  if (!c) return;
+  c.innerHTML = sideTab === 'preview' ? renderPreviewPanel() : renderInspector();
+  $$('.side-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === sideTab));
+  wireHandlers();
+  if (sideTab === 'preview') startChat();
+}
+
+function refreshEditor() {
+  refreshCanvas();
+  refreshSide();
+  updateVars();
+}
+
+async function globalActions(e) {
+  const a = e.target.closest('[data-act]');
+  if (!a) return;
+  e.stopPropagation();
+  const act = a.dataset.act;
+
+  if (act === 'new-bot') {
+    // Open from templates
+    navigate('/plantillas');
+  }
+  else if (act === 'add-step-modal') {
+    addStepModal();
+  }
+  else if (act === 'add-option') {
+    const step = stepInBot(currentBot, selectedStepId);
+    if (step && step.type === 'buttons') {
+      if (!step.options) step.options = [];
+      step.options.push({ label:'Nueva opción', next: currentBot.flow.at(-1)?.id });
+      saveDB();
+      refreshSide();
+      refreshCanvas();
+    }
+  }
+  else if (act === 'test-now') {
+    sideTab = 'preview';
+    refreshSide();
+  }
+  else if (act === 'restart-preview') {
+    startChat();
+  }
+  else if (act === 'duplicate-bot') {
+    const cpy = JSON.parse(JSON.stringify(currentBot));
+    cpy.id = uid();
+    cpy.name = currentBot.name + ' (copia)';
+    cpy.active = false;
+    cpy.conversations = 0;
+    cpy.completed = 0;
+    cpy.createdAt = Date.now();
+    db.bots.unshift(cpy);
+    saveDB(); navigate('/bot/' + cpy.id);
+    toast('Bot duplicado');
+  }
+  else if (act === 'delete-bot') {
+    if (confirm('¿Eliminar este bot? No se puede deshacer.')) {
+      db.bots = db.bots.filter(b => b.id !== currentBot.id);
+      saveDB(); navigate('/'); toast('Bot eliminado');
+    }
+  }
+  else if (act === 'reset-flow') {
+    if (confirm('¿Reiniciar el flujo a un solo paso?')) {
+      currentBot.flow = [
+        { id:'s1', type:'message', content:'¡Hola!', next:'end' },
+        { id:'end', type:'end' },
+      ];
+      selectedStepId = null;
+      saveDB(); refreshEditor();
+    }
+  }
+  else if (act === 'reset-all') {
+    if (confirm('¿Borrar TODO y reiniciar?')) {
+      localStorage.removeItem(STORAGE_KEY);
+      location.reload();
+    }
+  }
+}
+
+function addStepModal() {
+  const m = $('#modal');
+  $('#modalCard').innerHTML = `
+    <div class="modal-head">
+      <h2>Agregar paso</h2>
+      <button type="button" class="btn ghost sm" data-mc="cancel">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        ${Object.entries(STEP_TYPES).filter(([k]) => k !== 'condition').map(([k, v]) => `
+          <button type="button" data-add-type="${k}" style="background:var(--bg-card-2);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;text-align:left;color:var(--text);transition:border-color .15s">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+              <div style="width:32px;height:32px;border-radius:8px;background:${v.color};display:flex;align-items:center;justify-content:center;font-size:16px">${v.icon}</div>
+              <b>${v.label}</b>
+            </div>
+            <div style="font-size:12px;color:var(--text-m)">${v.desc}</div>
+          </button>`).join('')}
+      </div>
+    </div>`;
+  m.classList.add('open');
+  m.onclick = e => { if (e.target.dataset.mc === 'cancel' || e.target === m) m.classList.remove('open'); };
+  $$('[data-add-type]', m).forEach(b => b.addEventListener('mouseover', () => b.style.borderColor = 'var(--accent)'));
+  $$('[data-add-type]', m).forEach(b => b.addEventListener('mouseout', () => b.style.borderColor = 'var(--border)'));
+  $$('[data-add-type]', m).forEach(b => b.addEventListener('click', () => {
+    const type = b.dataset.addType;
+    addStep(type);
+    m.classList.remove('open');
+  }));
+}
+
+function addStep(type) {
+  if (!currentBot) return;
+  const newId = 's' + (currentBot.flow.length + 1) + uid().slice(0,2);
+  const endStep = currentBot.flow.find(s => s.type === 'end');
+  // Insert before end
+  const insertIdx = endStep ? currentBot.flow.indexOf(endStep) : currentBot.flow.length;
+  const prevStep = currentBot.flow[insertIdx - 1];
+  const newStep = {
+    id: newId,
+    type,
+    content: type === 'message' ? '' : type === 'question' ? '¿Cuál es tu...?' : type === 'buttons' ? 'Elige una opción:' : '',
+    next: endStep?.id,
+  };
+  if (type === 'buttons') newStep.options = [
+    { label:'Opción 1', next: endStep?.id },
+    { label:'Opción 2', next: endStep?.id },
+  ];
+  if (type === 'question') newStep.variable = '';
+  if (type === 'action') newStep.actionType = 'email';
+  if (type === 'delay') newStep.delay = 1;
+  currentBot.flow.splice(insertIdx, 0, newStep);
+  // wire previous step to new one
+  if (prevStep && prevStep.next === endStep?.id) prevStep.next = newId;
+  saveDB();
+  selectedStepId = newId;
+  sideTab = 'inspector';
+  refreshEditor();
+  toast('Paso agregado');
+}
+
+// === Integrations form handlers (delegated) ===
+document.addEventListener('submit', async e => {
+  const form = e.target;
+  if (form.id === 'aiForm') {
+    e.preventDefault();
+    const fd = new FormData(form);
+    const payload = {
+      provider: fd.get('provider'),
+      model: fd.get('model'),
+      systemPrompt: fd.get('systemPrompt'),
+    };
+    const k = fd.get('apiKey');
+    if (k) payload.apiKey = k;
+    if (useAPI) {
+      try {
+        const r = await fetch(api('/api/integrations/ai'), { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        const data = await r.json();
+        db.integrations.ai = { ...db.integrations.ai, ...data };
+        saveDB(); render(); toast('IA guardada');
+      } catch { toast('Error guardando'); }
+    } else {
+      Object.assign(db.integrations.ai, payload);
+      if (k) db.integrations.ai.hasKey = true;
+      saveDB(); render(); toast('Guardado (modo local — sin IA real)');
+    }
+  }
+  if (form.id === 'waForm') {
+    e.preventDefault();
+    const fd = new FormData(form);
+    const payload = {
+      phoneNumber: fd.get('phoneNumber'),
+      phoneNumberId: fd.get('phoneNumberId'),
+      verifyToken: fd.get('verifyToken'),
+    };
+    const t = fd.get('accessToken');
+    if (t) payload.accessToken = t;
+    if (useAPI) {
+      try {
+        const r = await fetch(api('/api/integrations/whatsapp'), { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        const data = await r.json();
+        db.integrations.whatsapp = { ...db.integrations.whatsapp, ...data };
+        saveDB(); render(); toast('WhatsApp guardado');
+      } catch { toast('Error'); }
+    } else {
+      Object.assign(db.integrations.whatsapp, payload);
+      if (t) db.integrations.whatsapp.hasToken = true;
+      saveDB(); render(); toast('Guardado (modo local)');
+    }
+  }
+  if (form.id === 'tgForm') {
+    e.preventDefault();
+    const fd = new FormData(form);
+    const payload = { botName: fd.get('botName') };
+    const t = fd.get('botToken');
+    if (t) payload.botToken = t;
+    if (useAPI) {
+      try {
+        const r = await fetch(api('/api/integrations/telegram'), { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        const data = await r.json();
+        db.integrations.telegram = { ...db.integrations.telegram, ...data };
+        saveDB(); render(); toast('Telegram guardado');
+      } catch { toast('Error'); }
+    } else {
+      Object.assign(db.integrations.telegram, payload);
+      if (t) db.integrations.telegram.hasToken = true;
+      saveDB(); render(); toast('Guardado (modo local)');
+    }
+  }
+  if (form.id === 'msgForm') {
+    e.preventDefault();
+    const fd = new FormData(form);
+    const payload = { pageId: fd.get('pageId'), pageName: fd.get('pageName') };
+    const t = fd.get('accessToken');
+    if (t) payload.accessToken = t;
+    if (useAPI) {
+      try {
+        const r = await fetch(api('/api/integrations/messenger'), { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        const data = await r.json();
+        db.integrations.messenger = { ...db.integrations.messenger, ...data };
+        saveDB(); render(); toast('Messenger guardado');
+      } catch { toast('Error'); }
+    } else {
+      Object.assign(db.integrations.messenger, payload);
+      if (t) db.integrations.messenger.hasToken = true;
+      saveDB(); render(); toast('Guardado (modo local)');
+    }
+  }
+  if (form.id === 'igForm') {
+    e.preventDefault();
+    const fd = new FormData(form);
+    const payload = { accountId: fd.get('accountId'), username: fd.get('username') };
+    const t = fd.get('accessToken');
+    if (t) payload.accessToken = t;
+    if (useAPI) {
+      try {
+        const r = await fetch(api('/api/integrations/instagram'), { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        const data = await r.json();
+        db.integrations.instagram = { ...db.integrations.instagram, ...data };
+        saveDB(); render(); toast('Instagram guardado');
+      } catch { toast('Error'); }
+    } else {
+      Object.assign(db.integrations.instagram, payload);
+      if (t) db.integrations.instagram.hasToken = true;
+      saveDB(); render(); toast('Guardado (modo local)');
+    }
+  }
+});
+
+document.addEventListener('click', async e => {
+  const a = e.target.closest('[data-act]');
+  if (!a) return;
+  const act = a.dataset.act;
+  if (act === 'clear-ai-key') {
+    if (confirm('¿Borrar la API key de IA?')) {
+      if (useAPI) await fetch(api('/api/integrations/ai/key'), { method:'DELETE' });
+      db.integrations.ai.hasKey = false;
+      saveDB(); render(); toast('Key borrada');
+    }
+  }
+  else if (act === 'clear-wa-token') {
+    if (confirm('¿Borrar el token de WhatsApp?')) {
+      if (useAPI) await fetch(api('/api/integrations/whatsapp/token'), { method:'DELETE' });
+      db.integrations.whatsapp.hasToken = false;
+      saveDB(); render(); toast('Token borrado');
+    }
+  }
+  else if (act === 'copy-webhook') {
+    navigator.clipboard?.writeText(location.origin + '/api/whatsapp/webhook');
+    toast('Webhook copiado');
+  }
+  else if (act === 'copy-webhook-msg') {
+    navigator.clipboard?.writeText(location.origin + '/api/messenger/webhook');
+    toast('Webhook copiado');
+  }
+  else if (act === 'copy-webhook-ig') {
+    navigator.clipboard?.writeText(location.origin + '/api/instagram/webhook');
+    toast('Webhook copiado');
+  }
+  else if (act === 'clear-msg-token') {
+    if (confirm('¿Borrar el token de Messenger?')) {
+      if (useAPI) await fetch(api('/api/integrations/messenger/token'), { method:'DELETE' });
+      db.integrations.messenger.hasToken = false;
+      saveDB(); render(); toast('Token borrado');
+    }
+  }
+  else if (act === 'clear-ig-token') {
+    if (confirm('¿Borrar el token de Instagram?')) {
+      if (useAPI) await fetch(api('/api/integrations/instagram/token'), { method:'DELETE' });
+      db.integrations.instagram.hasToken = false;
+      saveDB(); render(); toast('Token borrado');
+    }
+  }
+  else if (act === 'save-api-url') {
+    const v = $('#apiUrlInput').value.trim().replace(/\/+$/, '');
+    if (v) localStorage.setItem('nexa.apiUrl', v);
+    else localStorage.removeItem('nexa.apiUrl');
+    toast('URL guardada — recargando...');
+    setTimeout(() => location.reload(), 600);
+  }
+  else if (act === 'clear-api-url') {
+    localStorage.removeItem('nexa.apiUrl');
+    toast('URL eliminada — recargando...');
+    setTimeout(() => location.reload(), 600);
+  }
+  else if (act === 'test-api') {
+    const v = $('#apiUrlInput').value.trim().replace(/\/+$/, '') || apiBase;
+    try {
+      const r = await fetch((v || '') + '/api/state');
+      if (r.ok) toast('✓ Backend responde correctamente');
+      else toast('✗ Backend no responde (status ' + r.status + ')');
+    } catch (e) { toast('✗ No pude conectar: ' + e.message); }
+  }
+});
+
+window.addEventListener('hashchange', render);
+
+// Async init
+(async () => {
+  db = await loadDB();
+  render();
+})();
+})();
+</script>
+</body>
+</html>

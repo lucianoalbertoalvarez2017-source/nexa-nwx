@@ -1,0 +1,13 @@
+{
+  "name": "nexa-nwx",
+  "version": "1.0.0",
+  "description": "Nexa NWX — Constructor de chatbots con IA + WhatsApp + Telegram + Messenger + Instagram",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
