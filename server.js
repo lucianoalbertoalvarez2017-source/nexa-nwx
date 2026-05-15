@@ -25,6 +25,14 @@ const PORT = process.env.PORT || 8765;
 const DB_FILE = path.join(__dirname, 'db.json');
 const PUBLIC_DIR = __dirname;
 
+// === Persistencia ===
+// Si hay variables de entorno de Upstash Redis, usa eso (persiste en producción).
+// Si no, usa archivo local db.json (para desarrollo).
+const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || '';
+const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || '';
+const useUpstash = !!(UPSTASH_URL && UPSTASH_TOKEN);
+const STATE_KEY = 'nexa_state_v1';
+
 function defaultDB() {
   return {
     bots: [],
@@ -51,32 +59,71 @@ function defaultDB() {
   };
 }
 
-let db = loadDB();
+let db = defaultDB();
 
-function loadDB() {
+function mergeWithDefaults(data) {
+  const def = defaultDB();
+  return {
+    ...def, ...data,
+    integrations: {
+      ...def.integrations, ...(data.integrations || {}),
+      ai: { ...def.integrations.ai, ...(data.integrations?.ai || {}) },
+      whatsapp: { ...def.integrations.whatsapp, ...(data.integrations?.whatsapp || {}) },
+      telegram: { ...def.integrations.telegram, ...(data.integrations?.telegram || {}) },
+      messenger: { ...def.integrations.messenger, ...(data.integrations?.messenger || {}) },
+      instagram: { ...def.integrations.instagram, ...(data.integrations?.instagram || {}) },
+    },
+  };
+}
+
+async function loadDB() {
+  if (useUpstash) {
+    try {
+      const r = await fetch(`${UPSTASH_URL}/get/${STATE_KEY}`, {
+        headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+      });
+      const data = await r.json();
+      if (data.result) {
+        const parsed = JSON.parse(data.result);
+        console.log('✓ Estado cargado desde Upstash Redis');
+        return mergeWithDefaults(parsed);
+      }
+      console.log('⓪ Upstash vacío — usando estado por defecto');
+    } catch (e) { console.error('Upstash load error:', e.message); }
+    return defaultDB();
+  }
+  // Fallback: archivo local
   try {
     if (fs.existsSync(DB_FILE)) {
       const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-      const def = defaultDB();
-      return {
-        ...def, ...data,
-        integrations: {
-          ...def.integrations, ...(data.integrations || {}),
-          ai: { ...def.integrations.ai, ...(data.integrations?.ai || {}) },
-          whatsapp: { ...def.integrations.whatsapp, ...(data.integrations?.whatsapp || {}) },
-          telegram: { ...def.integrations.telegram, ...(data.integrations?.telegram || {}) },
-          messenger: { ...def.integrations.messenger, ...(data.integrations?.messenger || {}) },
-          instagram: { ...def.integrations.instagram, ...(data.integrations?.instagram || {}) },
-        },
-      };
+      return mergeWithDefaults(data);
     }
-  } catch (e) { console.error('loadDB error', e); }
+  } catch (e) { console.error('loadDB file error', e); }
   return defaultDB();
 }
 
-function saveDB() {
+let _saveDebounce = null;
+async function saveDB() {
+  if (useUpstash) {
+    // debounce: agrupa varios saves rápidos en uno
+    clearTimeout(_saveDebounce);
+    _saveDebounce = setTimeout(async () => {
+      try {
+        await fetch(`${UPSTASH_URL}/set/${STATE_KEY}`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${UPSTASH_TOKEN}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(JSON.stringify(db)),
+        });
+      } catch (e) { console.error('Upstash save error:', e.message); }
+    }, 200);
+    return;
+  }
+  // Fallback: archivo local
   try { fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2)); }
-  catch (e) { console.error('saveDB error', e); }
+  catch (e) { console.error('saveDB file error', e); }
 }
 
 function safeState() {
@@ -568,23 +615,20 @@ const server = http.createServer(async (req, res) => {
   serveStatic(res, pathname);
 });
 
-server.listen(PORT, () => {
-  console.log('');
-  console.log('  ╔════════════════════════════════════════╗');
-  console.log('  ║         Nexa NWX  —  API + UI          ║');
-  console.log('  ╚════════════════════════════════════════╝');
-  console.log('');
-  console.log('  Frontend:        http://localhost:' + PORT + '/');
-  console.log('  API:             http://localhost:' + PORT + '/api/');
-  console.log('  Webhook WA:      http://localhost:' + PORT + '/api/whatsapp/webhook');
-  console.log('  DB:              ' + DB_FILE);
-  console.log('');
-  console.log('  Para usar IA real: ve a Integraciones y pega tu API key de');
-  console.log('  Anthropic (https://console.anthropic.com) u OpenAI.');
-  console.log('');
-  console.log('  Para WhatsApp: necesitas exponer este server con un túnel');
-  console.log('  público (ej. ngrok) y registrar el webhook en Meta.');
-  console.log('');
-  console.log('  Detener con Ctrl+C');
-  console.log('');
-});
+(async () => {
+  db = await loadDB();
+  server.listen(PORT, () => {
+    console.log('');
+    console.log('  ╔════════════════════════════════════════╗');
+    console.log('  ║         Nexa NWX  —  API + UI          ║');
+    console.log('  ╚════════════════════════════════════════╝');
+    console.log('');
+    console.log('  Frontend:        http://localhost:' + PORT + '/');
+    console.log('  API:             http://localhost:' + PORT + '/api/');
+    console.log('  Persistencia:    ' + (useUpstash ? '🌐 Upstash Redis (PERSISTE)' : '📁 ' + DB_FILE));
+    console.log('');
+    console.log('  Para usar IA real: ve a Integraciones y pega tu API key.');
+    console.log('  Detener con Ctrl+C');
+    console.log('');
+  });
+})();
